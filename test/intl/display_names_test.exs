@@ -23,6 +23,16 @@ defmodule Intl.DisplayNamesTest do
       assert {:ok, "Cyrillic"} = Intl.DisplayNames.of("Cyrl", type: :script, locale: :en)
     end
 
+    test "calendar display name" do
+      assert {:ok, "Gregorian Calendar"} =
+               Intl.DisplayNames.of(:gregorian, type: :calendar, locale: :en)
+    end
+
+    test "date_time_field display name" do
+      assert {:ok, "year"} =
+               Intl.DisplayNames.of(:year, type: :date_time_field, locale: :en)
+    end
+
     test "missing type returns error" do
       assert {:error, _} = Intl.DisplayNames.of("US")
     end

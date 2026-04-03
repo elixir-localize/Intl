@@ -4,11 +4,12 @@ defmodule Intl.DisplayNames do
   [`Intl.DisplayNames`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DisplayNames).
 
   Returns the localized display name for a given code based on its
-  type: region, language, currency, or script.
+  type: region, language, currency, script, calendar, or
+  date-time field.
 
   Delegates to `Localize.Territory`, `Localize.Language`,
-  `Localize.Currency`, and `Localize.Script` for the underlying
-  lookups.
+  `Localize.Currency`, `Localize.Script`, and `Localize.Calendar`
+  for the underlying lookups.
 
   """
 
@@ -26,7 +27,7 @@ defmodule Intl.DisplayNames do
   ### Options
 
   * `:type` is a required option. One of `:region`, `:language`,
-    `:currency`, or `:script`.
+    `:currency`, `:script`, `:calendar`, or `:date_time_field`.
 
   * `:locale` is a locale identifier string or atom. The default
     is the current process locale.
@@ -54,6 +55,12 @@ defmodule Intl.DisplayNames do
       iex> Intl.DisplayNames.of(:Latn, type: :script, locale: :en)
       {:ok, "Latin"}
 
+      iex> Intl.DisplayNames.of(:gregorian, type: :calendar, locale: :en)
+      {:ok, "Gregorian Calendar"}
+
+      iex> Intl.DisplayNames.of(:year, type: :date_time_field, locale: :en)
+      {:ok, "year"}
+
   """
   @spec of(String.t() | atom(), Keyword.t()) :: {:ok, String.t()} | {:error, term()}
   def of(code, options \\ []) do
@@ -72,6 +79,12 @@ defmodule Intl.DisplayNames do
       :script ->
         Localize.Script.display_name(code, options)
 
+      :calendar ->
+        Localize.Calendar.display_name(:calendar, code, options)
+
+      :date_time_field ->
+        Localize.Calendar.display_name(:date_time_field, code, options)
+
       nil ->
         {:error, ArgumentError.exception("The :type option is required")}
 
@@ -79,7 +92,7 @@ defmodule Intl.DisplayNames do
         {:error,
          ArgumentError.exception(
            "Unsupported type: #{inspect(other)}. " <>
-             "Expected :region, :language, :currency, or :script."
+             "Expected :region, :language, :currency, :script, :calendar, or :date_time_field."
          )}
     end
   end

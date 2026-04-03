@@ -121,8 +121,8 @@ The combination of `type` and `style` is mapped to a Localize list format atom (
 | `"language"` | `:language` | Compatible — delegates to `Localize.Language.display_name/2` |
 | `"currency"` | `:currency` | Compatible — delegates to `Localize.Currency.display_name/2` |
 | `"script"` | `:script` | Compatible — delegates to `Localize.Script.display_name/2` |
-| `"calendar"` | — | Not supported |
-| `"dateTimeField"` | — | Not supported |
+| `"calendar"` | `:calendar` | Compatible — delegates to `Localize.Calendar.display_name/3` |
+| `"dateTimeField"` | `:date_time_field` | Compatible — delegates to `Localize.Calendar.display_name/3` |
 
 ## Intl.RelativeTimeFormat
 
