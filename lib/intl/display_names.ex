@@ -122,8 +122,7 @@ defmodule Intl.DisplayNames do
   def of!(code, options \\ []) do
     case of(code, options) do
       {:ok, name} -> name
-      {:error, %{__exception__: true} = exception} -> raise exception
-      {:error, reason} -> raise ArgumentError, inspect(reason)
+      {:error, exception} -> raise exception
     end
   end
 end

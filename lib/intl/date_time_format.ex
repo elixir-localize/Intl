@@ -125,8 +125,7 @@ defmodule Intl.DateTimeFormat do
   def format!(value, options \\ []) do
     case format(value, options) do
       {:ok, string} -> string
-      {:error, %{__exception__: true} = exception} -> raise exception
-      {:error, reason} -> raise ArgumentError, inspect(reason)
+      {:error, exception} -> raise exception
     end
   end
 
@@ -188,8 +187,7 @@ defmodule Intl.DateTimeFormat do
   def format_range!(from, to, options \\ []) do
     case format_range(from, to, options) do
       {:ok, string} -> string
-      {:error, %{__exception__: true} = exception} -> raise exception
-      {:error, reason} -> raise ArgumentError, inspect(reason)
+      {:error, exception} -> raise exception
     end
   end
 

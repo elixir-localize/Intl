@@ -91,8 +91,7 @@ defmodule Intl.DurationFormat do
   def format!(duration, options \\ []) do
     case format(duration, options) do
       {:ok, string} -> string
-      {:error, %{__exception__: true} = exception} -> raise exception
-      {:error, reason} -> raise ArgumentError, inspect(reason)
+      {:error, exception} -> raise exception
     end
   end
 

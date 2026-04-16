@@ -68,7 +68,7 @@ defmodule Intl.ListFormat do
 
     case resolve_format(type, style) do
       {:ok, localize_format} ->
-        Localize.List.to_string(list, Keyword.put(options, :format, localize_format))
+        Localize.List.to_string(list, Keyword.put(options, :list_style, localize_format))
 
       {:error, _} = error ->
         error
@@ -100,8 +100,7 @@ defmodule Intl.ListFormat do
   def format!(list, options \\ []) do
     case format(list, options) do
       {:ok, string} -> string
-      {:error, %{__exception__: true} = exception} -> raise exception
-      {:error, reason} -> raise ArgumentError, inspect(reason)
+      {:error, exception} -> raise exception
     end
   end
 

@@ -82,8 +82,7 @@ defmodule Intl.PluralRules do
   def select!(number, options \\ []) do
     case select(number, options) do
       {:ok, category} -> category
-      {:error, %{__exception__: true} = exception} -> raise exception
-      {:error, reason} -> raise ArgumentError, inspect(reason)
+      {:error, exception} -> raise exception
     end
   end
 end

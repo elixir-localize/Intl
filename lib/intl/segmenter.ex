@@ -103,8 +103,7 @@ defmodule Intl.Segmenter do
   def segment!(string, options \\ []) do
     case segment(string, options) do
       {:ok, segments} -> segments
-      {:error, %{__exception__: true} = exception} -> raise exception
-      {:error, reason} -> raise ArgumentError, inspect(reason)
+      {:error, exception} -> raise exception
     end
   end
 

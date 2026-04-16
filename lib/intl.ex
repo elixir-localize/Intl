@@ -109,8 +109,7 @@ defmodule Intl do
   def get_canonical_locales!(locales) do
     case get_canonical_locales(locales) do
       {:ok, list} -> list
-      {:error, %{__exception__: true} = exception} -> raise exception
-      {:error, reason} -> raise ArgumentError, "Invalid locale: #{inspect(reason)}"
+      {:error, exception} -> raise exception
     end
   end
 

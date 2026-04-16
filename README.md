@@ -9,20 +9,28 @@ If you are familiar with the JS Intl API, you already know how to use this libra
 `Intl` is a thin shim over the [Localize](https://hexdocs.pm/localize) library which provides the full CLDR-based locale data and formatting engine. Each `Intl` module translates JS Intl option names and conventions into the corresponding `Localize` calls:
 
 * `Intl.NumberFormat` delegates to `Localize.Number` and `Localize.Unit`.
+
 * `Intl.DateTimeFormat` delegates to `Localize.DateTime`, `Localize.Date`, `Localize.Time`, and `Localize.Interval`.
+
 * `Intl.ListFormat` delegates to `Localize.List`.
+
 * `Intl.DisplayNames` delegates to `Localize.Territory`, `Localize.Language`, `Localize.Currency`, and `Localize.Script`.
+
 * `Intl.RelativeTimeFormat` delegates to `Localize.DateTime.Relative`.
+
 * `Intl.PluralRules` delegates to `Localize.Number.PluralRule`.
+
 * `Intl.Collator` delegates to `Localize.Collation`.
+
 * `Intl.DurationFormat` delegates to `Localize.Duration`.
+
 * `Intl.Segmenter` uses `String.graphemes/1` for grapheme segmentation and the optional `unicode_string` library for word and sentence segmentation.
 
 If you need lower-level control or access to features beyond the Intl API surface (such as unit conversion, message formatting, or calendar metadata), use `Localize` directly.
 
 ## Compatibility and Differences
 
-The full compatibility matrix is in [compatibility.md](compatibility.md). Key points:
+The full compatibility matrix is in [compatibility.md](https://github.com/elixir-cldr/intl/blob/v0.1.0/compatibility.md). Key points:
 
 * **Functional, not object-oriented.** JS creates formatter instances with `new Intl.NumberFormat(locale, options)`. Elixir passes options directly: `Intl.NumberFormat.format(number, options)`.
 
@@ -96,6 +104,9 @@ iex> Intl.DisplayNames.of(:Latn, type: :script, locale: :en)
 
 iex> Intl.DisplayNames.of("JPY", type: :currency, locale: :en)
 {:ok, "Japanese Yen"}
+
+iex> Intl.DisplayNames.of(:gregorian, type: :calendar, locale: :en)
+{:ok, "Gregorian Calendar"}
 ```
 
 ### Relative Time
@@ -182,3 +193,19 @@ Word and sentence segmentation require the optional `unicode_string` dependency:
 ```elixir
 {:unicode_string, "~> 1.8"}
 ```
+
+## Locale Data
+
+`Intl` delegates to `Localize` for locale data. The `:en` locale is always available. To use other locales, either pre-download their data at build time:
+
+```bash
+mix localize.download_locales de fr ja
+```
+
+Or enable runtime downloading in `config/runtime.exs`:
+
+```elixir
+config :localize, :allow_runtime_locale_download, true
+```
+
+Locale data is loaded lazily into `:persistent_term` on first access. See the [Localize documentation](https://hexdocs.pm/localize) for full configuration details.

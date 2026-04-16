@@ -116,8 +116,7 @@ defmodule Intl.NumberFormat do
   def format!(number, options \\ []) do
     case format(number, options) do
       {:ok, string} -> string
-      {:error, %{__exception__: true} = exception} -> raise exception
-      {:error, reason} -> raise ArgumentError, inspect(reason)
+      {:error, exception} -> raise exception
     end
   end
 
@@ -181,8 +180,7 @@ defmodule Intl.NumberFormat do
   def format_range!(number_start, number_end, options \\ []) do
     case format_range(number_start, number_end, options) do
       {:ok, string} -> string
-      {:error, %{__exception__: true} = exception} -> raise exception
-      {:error, reason} -> raise ArgumentError, inspect(reason)
+      {:error, exception} -> raise exception
     end
   end
 
