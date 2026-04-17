@@ -30,7 +30,7 @@ If you need lower-level control or access to features beyond the Intl API surfac
 
 ## Compatibility and Differences
 
-The full compatibility matrix is in [compatibility.md](https://github.com/elixir-cldr/intl/blob/v0.1.0/compatibility.md). Key points:
+The full compatibility matrix is in [the Compatibility guide](https://github.com/elixir-cldr/intl/blob/v0.1.0/guides/compatibility.md). Key points:
 
 * **Functional, not object-oriented.** JS creates formatter instances with `new Intl.NumberFormat(locale, options)`. Elixir passes options directly: `Intl.NumberFormat.format(number, options)`.
 

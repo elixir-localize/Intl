@@ -7,16 +7,85 @@ defmodule Intl.MixProject do
     [
       app: :intl,
       version: @version,
-      elixir: "~> 1.19",
-      start_permanent: Mix.env() == :prod,
-      deps: deps(),
-      docs: docs(),
       name: "Intl",
       source_url: "https://github.com/elixir-cldr/intl",
+      docs: docs(),
+      deps: deps(),
       description: description(),
       package: package(),
+      elixir: "~> 1.19",
+      start_permanent: Mix.env() == :prod,
       dialyzer: [
         plt_add_apps: ~w(mix)a
+      ]
+    ]
+  end
+
+  def description do
+    "An Elixir interface to internationalization functions modelled on " <>
+      "the JavaScript Intl API. Delegates to the Localize library for " <>
+      "locale-aware formatting of numbers, dates, lists, durations, and more."
+  end
+
+  def package do
+    [
+      maintainers: ["Kip Cole"],
+      licenses: ["Apache-2.0"],
+      links: links(),
+      files: [
+        "lib",
+        "mix.exs",
+        ".formatter.exs",
+        "README*",
+        "CHANGELOG*",
+        "LICENSE*"
+      ]
+    ]
+  end
+
+  def links do
+    %{
+      "GitHub" => "https://github.com/elixir-cldr/intl",
+      "Readme" => "https://github.com/elixir-cldr/intl/blob/v#{@version}/README.md",
+      "Changelog" => "https://github.com/elixir-cldr/intl/blob/v#{@version}/CHANGELOG.md"
+    }
+  end
+
+  def docs do
+    [
+      source_ref: "v#{@version}",
+      main: "readme",
+      formatters: ["html", "markdown"],
+      extras:
+        [
+          "README.md",
+          "LICENSE.md",
+          "CHANGELOG.md"
+        ] ++ Path.wildcard("guides/*.md"),
+      groups_for_modules: groups_for_modules(),
+      groups_for_extras: groups_for_extras(),
+      skip_undefined_reference_warnings_on:
+        [
+          "CHANGELOG.md"
+        ] ++ Path.wildcard("guides/*.md")
+    ]
+  end
+
+  def groups_for_modules do
+    [
+      Formatting:
+        ~r/^Intl\.(NumberFormat|DateTimeFormat|ListFormat|RelativeTimeFormat|DurationFormat)$/,
+      "Display Names": ~r/^Intl\.DisplayNames$/,
+      Linguistic: ~r/^Intl\.(Collator|PluralRules|Segmenter)$/
+    ]
+  end
+
+  defp groups_for_extras do
+    [
+      Guides: [
+        "guides/getting_started.md",
+        "guides/compatibility.md",
+        "guides/comparison_with_localize.md"
       ]
     ]
   end
@@ -24,53 +93,6 @@ defmodule Intl.MixProject do
   def application do
     [
       extra_applications: [:logger]
-    ]
-  end
-
-  defp description do
-    """
-    An Elixir interface to internationalization functions modelled on
-    the JavaScript Intl API. Delegates to the Localize library for
-    locale-aware formatting of numbers, dates, lists, durations, and
-    more.
-    """
-  end
-
-  defp package do
-    [
-      maintainers: ["Kip Cole"],
-      licenses: ["Apache-2.0"],
-      links: %{
-        "GitHub" => "https://github.com/elixir-cldr/intl",
-        "Changelog" => "https://github.com/elixir-cldr/intl/blob/v#{@version}/CHANGELOG.md",
-        "Readme" => "https://github.com/elixir-cldr/intl/blob/v#{@version}/README.md"
-      },
-      files: [
-        "lib",
-        ".formatter.exs",
-        "mix.exs",
-        "README.md",
-        "CHANGELOG.md",
-        "LICENSE.md",
-        "compatibility.md",
-        "intl_vs_localize.md"
-      ]
-    ]
-  end
-
-  defp docs do
-    [
-      main: "readme",
-      logo: "logo.png",
-      formatters: ["html", "markdown"],
-      extras: [
-        "README.md",
-        "CHANGELOG.md",
-        "LICENSE.md",
-        "compatibility.md",
-        "intl_vs_localize.md"
-      ],
-      skip_undefined_reference_warnings_on: ["CHANGELOG.md", "intl_vs_localize.md"]
     ]
   end
 
