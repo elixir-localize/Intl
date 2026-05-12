@@ -13,7 +13,7 @@ defmodule Intl.MixProject do
       deps: deps(),
       description: description(),
       package: package(),
-      elixir: "~> 1.19",
+      elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       dialyzer: [
         plt_add_apps: ~w(mix)a
