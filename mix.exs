@@ -98,7 +98,7 @@ defmodule Intl.MixProject do
 
   defp deps do
     [
-      {:localize, "~> 0.14.0"},
+      {:localize, "~> 0.31"},
       {:unicode_string, "~> 1.8", optional: true},
       {:ex_doc, "~> 0.34", only: [:dev, :release], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
