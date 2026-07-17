@@ -30,7 +30,7 @@ If you need lower-level control or access to features beyond the Intl API surfac
 
 ## Compatibility and Differences
 
-The full compatibility matrix is in [the Compatibility guide](https://github.com/elixir-cldr/intl/blob/v0.1.0/guides/compatibility.md). Key points:
+The full compatibility matrix is in [the Compatibility guide](https://hexdocs.pm/intl/compatibility.html). Key points:
 
 * **Functional, not object-oriented.** JS creates formatter instances with `new Intl.NumberFormat(locale, options)`. Elixir passes options directly: `Intl.NumberFormat.format(number, options)`.
 
@@ -62,6 +62,18 @@ iex> Intl.NumberFormat.format(0.56, locale: :en, style: :percent)
 
 iex> Intl.NumberFormat.format(1234.5, locale: :en, style: :currency, currency: :USD)
 {:ok, "$1,234.50"}
+
+iex> Intl.NumberFormat.format(1234, locale: :en, style: :currency, currency: :USD, notation: :compact)
+{:ok, "$1.2K"}
+
+iex> Intl.NumberFormat.format(-1234.5, locale: :en, style: :currency, currency: :USD, currency_sign: :accounting)
+{:ok, "($1,234.50)"}
+
+iex> Intl.NumberFormat.format(1234.5, locale: :en, notation: :scientific)
+{:ok, "1.2345E3"}
+
+iex> Intl.NumberFormat.format(1234.5, locale: :en, maximum_significant_digits: 3)
+{:ok, "1,230"}
 ```
 
 ### Date and Time Formatting
@@ -183,7 +195,7 @@ Add `intl` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:intl, "~> 0.1.0"}
+    {:intl, "~> 0.3.0"}
   ]
 end
 ```

@@ -58,12 +58,12 @@ defmodule Intl.DurationFormat do
   def format(duration_or_map, options \\ [])
 
   def format(%Localize.Duration{} = duration, options) do
-    Localize.Duration.to_string(duration, options)
+    Localize.Duration.to_string(duration, translate_style(options))
   end
 
   def format(map, options) when is_map(map) do
     duration = to_duration_struct(map)
-    Localize.Duration.to_string(duration, options)
+    Localize.Duration.to_string(duration, translate_style(options))
   end
 
   @doc """
@@ -92,6 +92,15 @@ defmodule Intl.DurationFormat do
     case format(duration, options) do
       {:ok, string} -> string
       {:error, exception} -> raise exception
+    end
+  end
+
+  # The JS-compatible :style option maps to Localize's :format
+  # option (Localize deprecated :format's old name :style in 0.43).
+  defp translate_style(options) do
+    case Keyword.pop(options, :style) do
+      {nil, options} -> options
+      {style, options} -> Keyword.put_new(options, :format, style)
     end
   end
 

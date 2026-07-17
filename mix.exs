@@ -1,7 +1,7 @@
 defmodule Intl.MixProject do
   use Mix.Project
 
-  @version "0.2.0"
+  @version "0.3.0"
 
   def project do
     [
@@ -46,8 +46,8 @@ defmodule Intl.MixProject do
   def links do
     %{
       "GitHub" => "https://github.com/elixir-cldr/intl",
-      "Readme" => "https://github.com/elixir-cldr/intl/blob/v#{@version}/README.md",
-      "Changelog" => "https://github.com/elixir-cldr/intl/blob/v#{@version}/CHANGELOG.md"
+      "Readme" => "https://hexdocs.pm/intl/readme.html",
+      "Changelog" => "https://hexdocs.pm/intl/changelog.html"
     }
   end
 
@@ -98,7 +98,7 @@ defmodule Intl.MixProject do
 
   defp deps do
     [
-      {:localize, "~> 0.31 or ~> 1.0"},
+      {:localize, "~> 0.50 or ~> 1.0"},
       {:unicode_string, "~> 1.8", optional: true},
       {:ex_doc, "~> 0.34", only: [:dev, :release], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}

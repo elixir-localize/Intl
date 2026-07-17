@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-07-18
+
+### Added
+
+* `Intl.NumberFormat.format/2` supports `notation: :scientific` and `notation: :engineering`.
+
+* `Intl.NumberFormat.format/2` supports `:currency_display` (`:symbol`, `:narrow_symbol`, `:code`, `:name`) and `:currency_sign` (`:standard`, `:accounting`).
+
+* `Intl.NumberFormat.format/2` supports `:use_grouping` (`:always`, `:auto`, `:min2`, `true`, `false`), mapped to Localize `:minimum_grouping_digits`.
+
+* `Intl.NumberFormat.format/2` supports `:minimum_significant_digits`, `:maximum_significant_digits`, `:numbering_system`, and `:rounding_increment`.
+
+* `Intl.NumberFormat.format_range/3` supports the `:currency` and `:percent` styles in addition to `:decimal`.
+
+### Changed
+
+* Localize 0.50 or later is required. Compact notation now applies the ECMA-402 default precision of at most two significant digits ("1.2K" for 1234), matching JS.
+
+* `Intl.DurationFormat` translates its `:style` option to the Localize `:format` option, following the Localize 0.43 rename.
+
+### Fixed
+
+* `Intl.NumberFormat.format/2` returns `{:error, %ArgumentError{}}` for invalid `:style`, `:notation`, or `:compact_display` values instead of raising `CaseClauseError`.
+
 ## [0.2.0] - 2025-05-12
 
 ### Bug Fixes

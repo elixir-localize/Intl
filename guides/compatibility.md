@@ -22,7 +22,7 @@ Return values use Elixir's `{:ok, result}` / `{:error, reason}` convention. Bang
 | JS Method | Elixir Function | Status |
 |---|---|---|
 | `format()` | `Intl.NumberFormat.format/2` | Compatible |
-| `formatRange()` | `Intl.NumberFormat.format_range/3` | Compatible |
+| `formatRange()` | `Intl.NumberFormat.format_range/3` | Compatible — supports `:decimal`, `:currency`, and `:percent` styles. `:unit` ranges are not supported. |
 | `formatToParts()` | — | Not supported |
 | `formatRangeToParts()` | — | Not supported |
 | `resolvedOptions()` | — | Not supported |
@@ -36,18 +36,26 @@ Return values use Elixir's `{:ok, result}` / `{:error, reason}` convention. Bang
 | `currency` | `:currency` | Pass-through |
 | `unit` | `:unit` | Unit identifier string |
 | `unitDisplay` | `:unit_display` | `:long`, `:short`, `:narrow` |
-| `notation` | `:notation` | `:standard` or `:compact` |
-| `compactDisplay` | `:compact_display` | `:short` or `:long` |
+| `notation` | `:notation` | `:standard`, `:scientific`, `:engineering`, or `:compact` |
+| `compactDisplay` | `:compact_display` | `:short` or `:long`. Compact currency always uses the short form (CLDR defines no long compact currency format). |
 | `minimumFractionDigits` | `:minimum_fraction_digits` | Mapped to `:min_fractional_digits` in Localize |
 | `maximumFractionDigits` | `:maximum_fraction_digits` | Mapped to `:max_fractional_digits` in Localize |
-| `minimumIntegerDigits` | — | Not supported |
-| `minimumSignificantDigits` | — | Not supported |
-| `maximumSignificantDigits` | — | Not supported |
-| `useGrouping` | — | Not supported (always grouped) |
-| `signDisplay` | — | Not supported |
-| `currencyDisplay` | — | Not directly supported |
-| `currencySign` | — | Not supported |
+| `minimumIntegerDigits` | — | Not supported (Localize has no zero-padding option) |
+| `minimumSignificantDigits` | `:minimum_significant_digits` | Pass-through; integer in `1..21` |
+| `maximumSignificantDigits` | `:maximum_significant_digits` | Pass-through; integer in `1..21` |
+| `useGrouping` | `:use_grouping` | `:always`, `:auto`, `:min2`, `true`, `false`. Mapped to Localize `:minimum_grouping_digits`. |
+| `signDisplay` | — | Not supported (no Localize equivalent) |
+| `currencyDisplay` | `:currency_display` | `:symbol`, `:narrow_symbol`, `:code`, `:name`. `:name` renders via the Localize `:currency_long` format, which formats the number as a decimal (no forced currency fraction digits). |
+| `currencySign` | `:currency_sign` | `:standard` or `:accounting`. `:accounting` maps to the Localize `:accounting` format. |
+| `numberingSystem` | `:numbering_system` | Mapped to Localize `:number_system`. The system must be one defined for the locale. |
+| `roundingIncrement` | `:rounding_increment` | Mapped to Localize `:round_nearest`. Any positive integer is accepted (JS restricts the value set). |
 | `roundingMode` | `:rounding_mode` | Pass-through to Localize |
+| `roundingPriority` | — | Not supported |
+| `trailingZeroDisplay` | — | Not supported |
+
+When both fraction-digit and significant-digit options are given, significant digits take precedence (equivalent to the JS default `roundingPriority: "auto"`).
+
+Compact notation applies the ECMA-402 default precision of at most two significant digits on the mantissa, matching JS (`1234` formats as "1.2K").
 
 ## Intl.DateTimeFormat
 

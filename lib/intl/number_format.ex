@@ -11,12 +11,27 @@ defmodule Intl.NumberFormat do
 
   """
 
-  @style_to_format %{
-    decimal: :standard,
-    currency: :currency,
-    percent: :percent,
-    unit: :unit
-  }
+  @notations [:standard, :scientific, :engineering, :compact]
+  @compact_displays [:short, :long]
+  @currency_displays [:symbol, :narrow_symbol, :code, :name]
+  @currency_signs [:standard, :accounting]
+  @use_groupings [:always, :auto, :min2, true, false]
+
+  # Options consumed by this module and translated into Localize
+  # options; they must not leak through to Localize.Number.
+  @intl_only_options [
+    :notation,
+    :compact_display,
+    :currency_display,
+    :currency_sign,
+    :use_grouping,
+    :unit_display,
+    :unit
+  ]
+
+  # A minimum-grouping-digits value large enough that no formatted
+  # number ever reaches it, which disables grouping entirely.
+  @grouping_disabled 10_000
 
   @doc """
   Formats a number according to locale conventions.
@@ -44,16 +59,44 @@ defmodule Intl.NumberFormat do
   * `:unit_display` is `:long`, `:short`, or `:narrow`. Controls
     how the unit is displayed. The default is `:short`.
 
-  * `:notation` is `:standard` or `:compact`. When `:compact`,
-    uses abbreviated number formatting (for example, "1.2K").
-    The default is `:standard`.
+  * `:notation` is `:standard`, `:scientific`, `:engineering`,
+    or `:compact`. When `:compact`, uses abbreviated number
+    formatting (for example, "1.2K"). The default is `:standard`.
 
   * `:compact_display` is `:short` or `:long`. Only used when
-    `:notation` is `:compact`. The default is `:short`.
+    `:notation` is `:compact`. The default is `:short`. Compact
+    currency formatting always uses the short form since CLDR
+    defines no long compact currency format.
+
+  * `:currency_display` is `:symbol`, `:narrow_symbol`, `:code`,
+    or `:name`. Controls how the currency is presented. The
+    default is `:symbol`.
+
+  * `:currency_sign` is `:standard` or `:accounting`. When
+    `:accounting`, negative currency amounts render in the
+    locale's accounting format (for example, "($1,234.50)").
+    The default is `:standard`.
+
+  * `:use_grouping` is `:always`, `:auto`, `:min2`, `true`, or
+    `false`. `:min2` groups only when there are at least two
+    digits in a group; `false` disables grouping. The default
+    is `:auto`.
 
   * `:minimum_fraction_digits` is a non-negative integer.
 
   * `:maximum_fraction_digits` is a non-negative integer.
+
+  * `:minimum_significant_digits` is an integer in `1..21`.
+
+  * `:maximum_significant_digits` is an integer in `1..21`.
+    When set, significant-digit precision overrides
+    fraction-digit precision.
+
+  * `:numbering_system` is a numbering system name (for example,
+    `:latn`). The system must be one defined for the locale.
+
+  * `:rounding_increment` is a positive integer. The formatted
+    value is rounded to the nearest multiple of this increment.
 
   * `:rounding_mode` is one of `:down`, `:half_up`, `:half_even`,
     `:ceiling`, `:floor`, `:half_down`, `:up`.
@@ -75,6 +118,21 @@ defmodule Intl.NumberFormat do
       iex> Intl.NumberFormat.format(1234.5, locale: :en, style: :currency, currency: :USD)
       {:ok, "$1,234.50"}
 
+      iex> Intl.NumberFormat.format(1234.5, locale: :en, notation: :scientific)
+      {:ok, "1.2345E3"}
+
+      iex> Intl.NumberFormat.format(1234, locale: :en, style: :currency, currency: :USD, notation: :compact)
+      {:ok, "$1.2K"}
+
+      iex> Intl.NumberFormat.format(-1234.5, locale: :en, style: :currency, currency: :USD, currency_sign: :accounting)
+      {:ok, "($1,234.50)"}
+
+      iex> Intl.NumberFormat.format(1234567, locale: :en, use_grouping: false)
+      {:ok, "1234567"}
+
+      iex> Intl.NumberFormat.format(1234.5, locale: :en, maximum_significant_digits: 3)
+      {:ok, "1,230"}
+
   """
   @spec format(number() | Decimal.t(), Keyword.t()) ::
           {:ok, String.t()} | {:error, term()}
@@ -85,9 +143,13 @@ defmodule Intl.NumberFormat do
       :unit ->
         format_unit(number, options)
 
-      _ ->
-        localize_options = translate_options(style, options)
-        Localize.Number.to_string(number, localize_options)
+      style when style in [:decimal, :currency, :percent] ->
+        with {:ok, localize_options} <- translate_options(style, options) do
+          Localize.Number.to_string(number, localize_options)
+        end
+
+      other ->
+        {:error, invalid_option_error(:style, other, [:decimal, :currency, :percent, :unit])}
     end
   end
 
@@ -130,8 +192,8 @@ defmodule Intl.NumberFormat do
   * `number_end` is the end of the range.
 
   * `options` is a keyword list of options. Accepts the same
-    options as `format/2` (except `:style` must be `:decimal`
-    or omitted).
+    options as `format/2` (except `:style` must be `:decimal`,
+    `:currency`, or `:percent`; `:unit` ranges are not supported).
 
   ### Returns
 
@@ -144,13 +206,24 @@ defmodule Intl.NumberFormat do
       iex> Intl.NumberFormat.format_range(100, 200, locale: :en)
       {:ok, "100–200"}
 
+      iex> Intl.NumberFormat.format_range(100, 200, locale: :en, style: :currency, currency: :USD)
+      {:ok, "$100.00–$200.00"}
+
   """
   @spec format_range(number(), number(), Keyword.t()) ::
           {:ok, String.t()} | {:error, term()}
   def format_range(number_start, number_end, options \\ []) do
-    options = Keyword.delete(options, :style)
-    localize_options = translate_options(:decimal, options)
-    Localize.Number.to_range_string(number_start, number_end, localize_options)
+    {style, options} = Keyword.pop(options, :style, :decimal)
+
+    case style do
+      style when style in [:decimal, :currency, :percent] ->
+        with {:ok, localize_options} <- translate_options(style, options) do
+          Localize.Number.to_range_string(number_start, number_end, localize_options)
+        end
+
+      other ->
+        {:error, invalid_option_error(:style, other, [:decimal, :currency, :percent])}
+    end
   end
 
   @doc """
@@ -198,40 +271,84 @@ defmodule Intl.NumberFormat do
   end
 
   defp translate_options(style, options) do
-    format = Map.get(@style_to_format, style, :standard)
+    with {:ok, notation} <- validate_option(options, :notation, @notations, :standard),
+         {:ok, compact_display} <-
+           validate_option(options, :compact_display, @compact_displays, :short),
+         {:ok, currency_display} <-
+           validate_option(options, :currency_display, @currency_displays, :symbol),
+         {:ok, currency_sign} <-
+           validate_option(options, :currency_sign, @currency_signs, :standard),
+         {:ok, use_grouping} <- validate_option(options, :use_grouping, @use_groupings, :auto) do
+      format = resolve_format(style, notation, compact_display, currency_sign, currency_display)
 
-    options
-    |> translate_notation(format)
-    |> translate_fraction_digits()
-    |> Keyword.delete(:notation)
-    |> Keyword.delete(:compact_display)
-    |> Keyword.delete(:unit_display)
-    |> Keyword.delete(:unit)
-  end
+      localize_options =
+        options
+        |> Keyword.put(:format, format)
+        |> put_currency_symbol(style, currency_display)
+        |> put_grouping(use_grouping)
+        |> translate_option(:minimum_fraction_digits, :min_fractional_digits)
+        |> translate_option(:maximum_fraction_digits, :max_fractional_digits)
+        |> translate_option(:rounding_increment, :round_nearest)
+        |> translate_option(:numbering_system, :number_system)
+        |> Keyword.drop(@intl_only_options)
 
-  defp translate_notation(options, format) do
-    case Keyword.get(options, :notation, :standard) do
-      :compact ->
-        compact_display = Keyword.get(options, :compact_display, :short)
-
-        compact_format =
-          case compact_display do
-            :short -> :decimal_short
-            :long -> :decimal_long
-          end
-
-        Keyword.put(options, :format, compact_format)
-
-      :standard ->
-        Keyword.put(options, :format, format)
+      {:ok, localize_options}
     end
   end
 
-  defp translate_fraction_digits(options) do
-    options
-    |> translate_option(:minimum_fraction_digits, :min_fractional_digits)
-    |> translate_option(:maximum_fraction_digits, :max_fractional_digits)
+  defp validate_option(options, key, valid_values, default) do
+    value = Keyword.get(options, key, default)
+
+    if value in valid_values do
+      {:ok, value}
+    else
+      {:error, invalid_option_error(key, value, valid_values)}
+    end
   end
+
+  defp invalid_option_error(key, value, valid_values) do
+    ArgumentError.exception(
+      "Invalid #{inspect(key)} option: #{inspect(value)}. " <>
+        "Valid values are #{inspect(valid_values)}"
+    )
+  end
+
+  # CLDR defines no long compact currency format, so compact currency
+  # always uses :currency_short regardless of :compact_display,
+  # matching the browser fallback for Intl.NumberFormat.
+  defp resolve_format(:currency, :compact, _compact_display, _sign, _display),
+    do: :currency_short
+
+  defp resolve_format(_style, :compact, :short, _sign, _display), do: :decimal_short
+  defp resolve_format(_style, :compact, :long, _sign, _display), do: :decimal_long
+  defp resolve_format(_style, :scientific, _compact_display, _sign, _display), do: :scientific
+  defp resolve_format(_style, :engineering, _compact_display, _sign, _display), do: :engineering
+
+  defp resolve_format(:currency, :standard, _compact_display, :accounting, _display),
+    do: :accounting
+
+  defp resolve_format(:currency, :standard, _compact_display, :standard, :name),
+    do: :currency_long
+
+  defp resolve_format(:currency, :standard, _compact_display, :standard, _display), do: :currency
+  defp resolve_format(:percent, :standard, _compact_display, _sign, _display), do: :percent
+  defp resolve_format(:decimal, :standard, _compact_display, _sign, _display), do: :standard
+
+  defp put_currency_symbol(options, :currency, :narrow_symbol),
+    do: Keyword.put_new(options, :currency_symbol, :narrow)
+
+  defp put_currency_symbol(options, :currency, :code),
+    do: Keyword.put_new(options, :currency_symbol, :iso)
+
+  defp put_currency_symbol(options, _style, _currency_display), do: options
+
+  defp put_grouping(options, :auto), do: options
+  defp put_grouping(options, true), do: put_grouping(options, :always)
+  defp put_grouping(options, :always), do: Keyword.put_new(options, :minimum_grouping_digits, 1)
+  defp put_grouping(options, :min2), do: Keyword.put_new(options, :minimum_grouping_digits, 2)
+
+  defp put_grouping(options, false),
+    do: Keyword.put_new(options, :minimum_grouping_digits, @grouping_disabled)
 
   defp translate_option(options, from_key, to_key) do
     case Keyword.pop(options, from_key) do
