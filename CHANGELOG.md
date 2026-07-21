@@ -16,11 +16,17 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 
 * `Intl.NumberFormat.format/2` supports `:minimum_significant_digits`, `:maximum_significant_digits`, `:numbering_system`, and `:rounding_increment`.
 
+* `Intl.NumberFormat.format/2` supports `:sign_display` (`:auto`, `:always`, `:except_zero`, `:negative`, `:never`) mirroring the JS `signDisplay` option.
+
+* `:numbering_system` accepts any valid CLDR numbering system for any locale, including algorithmic systems, and `-u-nu-` locale extensions are honoured.
+
 * `Intl.NumberFormat.format_range/3` supports the `:currency` and `:percent` styles in addition to `:decimal`.
 
 ### Changed
 
-* Localize 0.50 or later is required. Compact notation now applies the ECMA-402 default precision of at most two significant digits ("1.2K" for 1234), matching JS.
+* Localize 1.0.0-rc.0 or later is required. Compact notation now applies the ECMA-402 default precision of at most two significant digits ("1.2K" for 1234), matching JS.
+
+* Negative currency amounts render the sign before the symbol ("-$1.00", previously "$-1.00"), matching JS `Intl.NumberFormat`.
 
 * `Intl.DurationFormat` translates its `:style` option to the Localize `:format` option, following the Localize 0.43 rename.
 

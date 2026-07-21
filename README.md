@@ -74,6 +74,9 @@ iex> Intl.NumberFormat.format(1234.5, locale: :en, notation: :scientific)
 
 iex> Intl.NumberFormat.format(1234.5, locale: :en, maximum_significant_digits: 3)
 {:ok, "1,230"}
+
+iex> Intl.NumberFormat.format(1234.5, locale: :en, sign_display: :always)
+{:ok, "+1,234.5"}
 ```
 
 ### Date and Time Formatting

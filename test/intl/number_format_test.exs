@@ -148,6 +148,59 @@ defmodule Intl.NumberFormatTest do
     end
   end
 
+  describe "format/2 sign display" do
+    test "always shows the sign" do
+      assert {:ok, "+1,234.5"} =
+               Intl.NumberFormat.format(1234.5, locale: :en, sign_display: :always)
+
+      assert {:ok, "-1,234.5"} =
+               Intl.NumberFormat.format(-1234.5, locale: :en, sign_display: :always)
+    end
+
+    test "except_zero omits the sign on zero" do
+      assert {:ok, "0"} = Intl.NumberFormat.format(0, locale: :en, sign_display: :except_zero)
+      assert {:ok, "+1"} = Intl.NumberFormat.format(1, locale: :en, sign_display: :except_zero)
+    end
+
+    test "never suppresses the sign" do
+      assert {:ok, "1,234.5"} =
+               Intl.NumberFormat.format(-1234.5, locale: :en, sign_display: :never)
+    end
+
+    test "sign display with currency style" do
+      assert {:ok, "+$1,234.50"} =
+               Intl.NumberFormat.format(1234.5,
+                 locale: :en,
+                 style: :currency,
+                 currency: :USD,
+                 sign_display: :always
+               )
+    end
+
+    test "invalid sign display returns error" do
+      assert {:error, %Localize.InvalidValueError{}} =
+               Intl.NumberFormat.format(1, locale: :en, sign_display: :bogus)
+    end
+  end
+
+  describe "format/2 numbering system" do
+    test "numbering system option" do
+      assert {:ok, "๑,๒๓๔.๕"} =
+               Intl.NumberFormat.format(1234.5, locale: :en, numbering_system: :thai)
+    end
+
+    test "numbering system via locale extension" do
+      assert {:ok, "๑,๒๓๔.๕"} = Intl.NumberFormat.format(1234.5, locale: "en-u-nu-thai")
+    end
+  end
+
+  describe "format/2 negative numbers" do
+    test "negative currency renders the sign before the symbol" do
+      assert {:ok, "-$1.00"} =
+               Intl.NumberFormat.format(-1, locale: :en, style: :currency, currency: :USD)
+    end
+  end
+
   describe "format_range/3" do
     test "range formatting" do
       assert {:ok, result} = Intl.NumberFormat.format_range(100, 200, locale: :en)

@@ -82,6 +82,10 @@ defmodule Intl.NumberFormat do
     digits in a group; `false` disables grouping. The default
     is `:auto`.
 
+  * `:sign_display` is `:auto`, `:always`, `:except_zero`,
+    `:negative`, or `:never`. Controls when the sign is
+    displayed. The default is `:auto`.
+
   * `:minimum_fraction_digits` is a non-negative integer.
 
   * `:maximum_fraction_digits` is a non-negative integer.
@@ -92,8 +96,10 @@ defmodule Intl.NumberFormat do
     When set, significant-digit precision overrides
     fraction-digit precision.
 
-  * `:numbering_system` is a numbering system name (for example,
-    `:latn`). The system must be one defined for the locale.
+  * `:numbering_system` is a CLDR numbering system name (for
+    example, `:latn`, `:thai`). Any valid CLDR numbering system
+    may be used with any locale, including algorithmic systems
+    such as `:roman`.
 
   * `:rounding_increment` is a positive integer. The formatted
     value is rounded to the nearest multiple of this increment.
@@ -132,6 +138,12 @@ defmodule Intl.NumberFormat do
 
       iex> Intl.NumberFormat.format(1234.5, locale: :en, maximum_significant_digits: 3)
       {:ok, "1,230"}
+
+      iex> Intl.NumberFormat.format(1234.5, locale: :en, sign_display: :always)
+      {:ok, "+1,234.5"}
+
+      iex> Intl.NumberFormat.format(1234.5, locale: :en, numbering_system: :thai)
+      {:ok, "๑,๒๓๔.๕"}
 
   """
   @spec format(number() | Decimal.t(), Keyword.t()) ::

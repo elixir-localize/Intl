@@ -44,10 +44,10 @@ Return values use Elixir's `{:ok, result}` / `{:error, reason}` convention. Bang
 | `minimumSignificantDigits` | `:minimum_significant_digits` | Pass-through; integer in `1..21` |
 | `maximumSignificantDigits` | `:maximum_significant_digits` | Pass-through; integer in `1..21` |
 | `useGrouping` | `:use_grouping` | `:always`, `:auto`, `:min2`, `true`, `false`. Mapped to Localize `:minimum_grouping_digits`. |
-| `signDisplay` | — | Not supported (no Localize equivalent) |
+| `signDisplay` | `:sign_display` | `:auto`, `:always`, `:except_zero`, `:negative`, `:never`. Pass-through to Localize. |
 | `currencyDisplay` | `:currency_display` | `:symbol`, `:narrow_symbol`, `:code`, `:name`. `:name` renders via the Localize `:currency_long` format, which formats the number as a decimal (no forced currency fraction digits). |
 | `currencySign` | `:currency_sign` | `:standard` or `:accounting`. `:accounting` maps to the Localize `:accounting` format. |
-| `numberingSystem` | `:numbering_system` | Mapped to Localize `:number_system`. The system must be one defined for the locale. |
+| `numberingSystem` | `:numbering_system` | Mapped to Localize `:number_system`. Any valid CLDR numbering system may be used with any locale, including algorithmic systems. A `-u-nu-` locale extension is also honoured. |
 | `roundingIncrement` | `:rounding_increment` | Mapped to Localize `:round_nearest`. Any positive integer is accepted (JS restricts the value set). |
 | `roundingMode` | `:rounding_mode` | Pass-through to Localize |
 | `roundingPriority` | — | Not supported |
