@@ -40,8 +40,10 @@ defmodule Intl.RelativeTimeFormat do
     is `:long`.
 
   * `:numeric` is `:always` or `:auto`. When `:auto`, special
-    forms like "yesterday" and "tomorrow" may be used instead of
-    "1 day ago" and "in 1 day". The default is `:auto`.
+    forms like "yesterday" and "tomorrow" are used where the
+    locale defines them. When `:always`, numeric forms like
+    "1 day ago" and "in 1 day" are always used. The default
+    is `:auto`.
 
   ### Returns
 
@@ -60,12 +62,14 @@ defmodule Intl.RelativeTimeFormat do
       iex> Intl.RelativeTimeFormat.format(-3, :day, locale: :en)
       {:ok, "3 days ago"}
 
+      iex> Intl.RelativeTimeFormat.format(-1, :day, locale: :en, numeric: :always)
+      {:ok, "1 day ago"}
+
   """
   @spec format(integer(), atom(), Keyword.t()) ::
           {:ok, String.t()} | {:error, term()}
   def format(value, unit, options \\ []) do
     {style, options} = Keyword.pop(options, :style, :long)
-    {_numeric, options} = Keyword.pop(options, :numeric, :auto)
 
     localize_format = Map.get(@style_to_format, style, :standard)
 

@@ -49,6 +49,15 @@ defmodule Intl.Collator do
   * `:ignore_punctuation` is a boolean. When `true`, punctuation
     is ignored during comparison. The default is `false`.
 
+  * `:usage` is `:sort` or `:search`. When `:search`, the
+    locale's search collation tailoring is used. The default
+    is `:sort`.
+
+  * `:collation` is a collation type atom (for example,
+    `:phonebook`, `:pinyin`, `:emoji`). Ignored when `:usage`
+    is `:search`. Locales without the requested tailoring fall
+    back to the root collation.
+
   ### Returns
 
   * `:lt` if `string1` sorts before `string2`.
@@ -108,8 +117,27 @@ defmodule Intl.Collator do
     options
     |> translate_sensitivity()
     |> translate_ignore_punctuation()
+    |> translate_usage()
     |> Keyword.delete(:sensitivity)
     |> Keyword.delete(:ignore_punctuation)
+    |> Keyword.delete(:usage)
+    |> Keyword.delete(:collation)
+  end
+
+  # JS usage: "search" selects the search collation; otherwise the
+  # JS collation option (e.g. phonebook) selects a tailoring. Both
+  # map to the Localize :type option.
+  defp translate_usage(options) do
+    cond do
+      Keyword.get(options, :usage) == :search ->
+        Keyword.put(options, :type, :search)
+
+      collation = Keyword.get(options, :collation) ->
+        Keyword.put(options, :type, collation)
+
+      true ->
+        options
+    end
   end
 
   defp translate_sensitivity(options) do

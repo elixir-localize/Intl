@@ -5,7 +5,8 @@ defmodule Intl do
 
   This module delegates to the `Localize` library for locale-aware
   formatting and provides the top-level `Intl` static methods:
-  `get_canonical_locales/1` and `supported_values_of/1`.
+  `get_canonical_locales/1`, `supported_locales_of/1`, and
+  `supported_values_of/1`.
 
   The sub-modules mirror the JS Intl constructors adapted to idiomatic
   Elixir: options are passed as keyword lists, return values use
@@ -114,12 +115,61 @@ defmodule Intl do
   end
 
   @doc """
+  Returns the subset of the given locales that are supported.
+
+  Modelled on the JS `supportedLocalesOf()` static methods. All
+  formatting modules share the same CLDR locale data, so a single
+  top-level function replaces the per-constructor JS methods.
+
+  A locale is supported when it resolves to CLDR locale data other
+  than the root locale. Requested locales keep their extensions and
+  order: `"de-ID"` is supported (falling back to `de` data) while
+  `"ban"` (Balinese, no CLDR data) is not. Locales that fail to
+  parse are excluded rather than raising, unlike JS.
+
+  ### Arguments
+
+  * `locales` is a locale identifier string or a list of locale
+    identifier strings.
+
+  ### Returns
+
+  * `{:ok, list}` where `list` contains the requested locale
+    strings that are supported, in the requested order.
+
+  ### Examples
+
+      iex> Intl.supported_locales_of(["ban", "id-u-co-pinyin", "de-ID"])
+      {:ok, ["id-u-co-pinyin", "de-ID"]}
+
+      iex> Intl.supported_locales_of("en-US")
+      {:ok, ["en-US"]}
+
+  """
+  @spec supported_locales_of(String.t() | [String.t()]) :: {:ok, [String.t()]}
+  def supported_locales_of(locales) when is_binary(locales) do
+    supported_locales_of([locales])
+  end
+
+  def supported_locales_of(locales) when is_list(locales) do
+    supported =
+      Enum.filter(locales, fn locale ->
+        case Localize.validate_locale(locale) do
+          {:ok, language_tag} -> language_tag.cldr_locale_id != :und
+          {:error, _reason} -> false
+        end
+      end)
+
+    {:ok, supported}
+  end
+
+  @doc """
   Returns the supported values for a given internationalization key.
 
   ### Arguments
 
-  * `key` is one of `:calendar`, `:currency`, `:numbering_system`,
-    or `:unit`.
+  * `key` is one of `:calendar`, `:collation`, `:currency`,
+    `:numbering_system`, `:time_zone`, or `:unit`.
 
   ### Returns
 
@@ -138,11 +188,34 @@ defmodule Intl do
       iex> :latn in systems
       true
 
+      iex> {:ok, collations} = Intl.supported_values_of(:collation)
+      iex> "emoji" in collations
+      true
+
+      iex> {:ok, time_zones} = Intl.supported_values_of(:time_zone)
+      iex> "Europe/Paris" in time_zones
+      true
+
   """
-  @spec supported_values_of(:calendar | :currency | :numbering_system | :unit) ::
+  @spec supported_values_of(
+          :calendar
+          | :collation
+          | :currency
+          | :numbering_system
+          | :time_zone
+          | :unit
+        ) ::
           {:ok, list()} | {:error, term()}
   def supported_values_of(:calendar) do
     {:ok, Localize.known_calendars()}
+  end
+
+  def supported_values_of(:collation) do
+    {:ok, Localize.known_collations()}
+  end
+
+  def supported_values_of(:time_zone) do
+    {:ok, Localize.known_timezones()}
   end
 
   def supported_values_of(:numbering_system) do
@@ -161,7 +234,8 @@ defmodule Intl do
     {:error,
      ArgumentError.exception(
        "Unsupported key: #{inspect(key)}. " <>
-         "Expected one of :calendar, :currency, :numbering_system, or :unit"
+         "Expected one of :calendar, :collation, :currency, :numbering_system, " <>
+         ":time_zone, or :unit"
      )}
   end
 end

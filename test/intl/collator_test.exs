@@ -16,6 +16,17 @@ defmodule Intl.CollatorTest do
     end
   end
 
+  describe "compare/3 usage and collation" do
+    test "collation type selects a tailoring" do
+      assert :lt = Intl.Collator.compare("äb", "ad", locale: :de)
+      assert :gt = Intl.Collator.compare("äb", "ad", locale: :de, collation: :phonebook)
+    end
+
+    test "search usage is accepted" do
+      assert :lt = Intl.Collator.compare("a", "b", locale: :en, usage: :search)
+    end
+  end
+
   describe "sort/2" do
     test "sorts strings by locale" do
       assert ["apple", "banana", "cherry"] =

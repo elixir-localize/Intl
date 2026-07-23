@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-rc.0] - 2026-07-23
+
+### Added
+
+* `Intl.NumberFormat.format_to_parts/2` and `format_to_parts!/2` return typed parts per JS `formatToParts()`, for `:decimal`, `:currency`, and `:percent` styles.
+
+* `Intl.NumberFormat.format/2` supports `:minimum_integer_digits`, `:trailing_zero_display` (`:strip_if_integer`), and `:rounding_priority` (`:more_precision`, `:less_precision`).
+
+* `Intl.DateTimeFormat.format/2` supports the `:era`, `:day_period`, `:time_zone_name`, `:hour12`, and `:hour_cycle` component options.
+
+* `Intl.PluralRules.select_range/3` and `select_range!/3` implement JS `selectRange()` using the CLDR plural-ranges data.
+
+* `Intl.Collator` supports `:usage` (`:sort`, `:search`) and `:collation` (`:phonebook`, `:pinyin`, `:emoji`, …).
+
+* `Intl.supported_locales_of/1` implements the JS `supportedLocalesOf()` static methods as one top-level function.
+
+* `Intl.supported_values_of/1` supports `:collation` and `:time_zone`, completing the JS `supportedValuesOf()` key set.
+
+* `Intl.RelativeTimeFormat.format/3` honours `numeric: :always`, forcing "1 day ago" instead of "yesterday".
+
+### Changed
+
+* Localize 1.0.0-rc.1 or later is required.
+
+* `currency_display: :name` applies the currency's fraction digits ("1,234.50 US dollars", previously "1,234 US dollars"), matching JS.
+
+* With the default `rounding_priority: :auto`, a significant-digit bound causes fraction-digit bounds to be ignored entirely, per ECMA-402.
+
+* Relative time offsets of zero format with the future pattern ("in 0 days") per ECMA-402.
+
+### Fixed
+
+* `Intl.DateTimeFormat` component options (`:year`, `:month`, `:day`, …) now match a locale format. Previously the generated skeleton was passed as a literal pattern, rendering without locale separators ("2025March15" instead of "March 15, 2025").
+
 ## [0.3.0] - 2026-07-22
 
 ### Added

@@ -16,6 +16,7 @@ defmodule Intl.NumberFormat do
   @currency_displays [:symbol, :narrow_symbol, :code, :name]
   @currency_signs [:standard, :accounting]
   @use_groupings [:always, :auto, :min2, true, false]
+  @rounding_priorities [:auto, :more_precision, :less_precision]
 
   # Options consumed by this module and translated into Localize
   # options; they must not leak through to Localize.Number.
@@ -86,6 +87,9 @@ defmodule Intl.NumberFormat do
     `:negative`, or `:never`. Controls when the sign is
     displayed. The default is `:auto`.
 
+  * `:minimum_integer_digits` is an integer in `1..21`. The
+    integer part is zero-padded to at least this many digits.
+
   * `:minimum_fraction_digits` is a non-negative integer.
 
   * `:maximum_fraction_digits` is a non-negative integer.
@@ -106,6 +110,15 @@ defmodule Intl.NumberFormat do
 
   * `:rounding_mode` is one of `:down`, `:half_up`, `:half_even`,
     `:ceiling`, `:floor`, `:half_down`, `:up`.
+
+  * `:rounding_priority` is `:auto`, `:more_precision`, or
+    `:less_precision`. Resolves conflicts when both fraction-digit
+    and significant-digit options are given. The default is
+    `:auto` (significant digits win).
+
+  * `:trailing_zero_display` is `:auto` or `:strip_if_integer`.
+    When `:strip_if_integer`, fraction digits are dropped if the
+    rounded value is an integer. The default is `:auto`.
 
   ### Returns
 
@@ -144,6 +157,12 @@ defmodule Intl.NumberFormat do
 
       iex> Intl.NumberFormat.format(1234.5, locale: :en, numbering_system: :thai)
       {:ok, "๑,๒๓๔.๕"}
+
+      iex> Intl.NumberFormat.format(5, locale: :en, minimum_integer_digits: 3)
+      {:ok, "005"}
+
+      iex> Intl.NumberFormat.format(1000, locale: :en, minimum_fraction_digits: 2, trailing_zero_display: :strip_if_integer)
+      {:ok, "1,000"}
 
   """
   @spec format(number() | Decimal.t(), Keyword.t()) ::
@@ -269,6 +288,103 @@ defmodule Intl.NumberFormat do
     end
   end
 
+  @doc """
+  Formats a number into a list of typed parts.
+
+  Modelled on the JS `Intl.NumberFormat.formatToParts()`. Each part
+  is a map with a `:type` and a `:value` key, allowing custom
+  rendering of individual segments (for example, styling the
+  currency symbol differently from the digits).
+
+  ### Arguments
+
+  * `number` is an integer, float, or `Decimal`.
+
+  * `options` is a keyword list of options. Accepts the same
+    options as `format/2` (except `:style` must be `:decimal`,
+    `:currency`, or `:percent`; `:unit` is not supported, and
+    `currency_display: :name` returns an error since the long
+    currency formats do not decompose into parts).
+
+  ### Returns
+
+  * `{:ok, parts}` on success, where `parts` is a list of
+    `%{type: atom, value: String.t()}` maps. Part types include
+    `:integer`, `:group`, `:decimal`, `:fraction`, `:currency`,
+    `:percent_sign`, `:minus_sign`, `:plus_sign`, `:compact`,
+    `:exponent_separator`, `:exponent_integer`, and `:literal`.
+
+  * `{:error, reason}` if options or input are invalid.
+
+  ### Examples
+
+      iex> Intl.NumberFormat.format_to_parts(-1234.5, locale: :en)
+      {:ok, [
+        %{type: :minus_sign, value: "-"},
+        %{type: :integer, value: "1"},
+        %{type: :group, value: ","},
+        %{type: :integer, value: "234"},
+        %{type: :decimal, value: "."},
+        %{type: :fraction, value: "5"}
+      ]}
+
+      iex> Intl.NumberFormat.format_to_parts(1_500_000, locale: :en, notation: :compact, compact_display: :long)
+      {:ok, [
+        %{type: :integer, value: "1"},
+        %{type: :decimal, value: "."},
+        %{type: :fraction, value: "5"},
+        %{type: :literal, value: " "},
+        %{type: :compact, value: "million"}
+      ]}
+
+  """
+  @spec format_to_parts(number() | Decimal.t(), Keyword.t()) ::
+          {:ok, [%{type: atom(), value: String.t()}]} | {:error, term()}
+  def format_to_parts(number, options \\ []) do
+    {style, options} = Keyword.pop(options, :style, :decimal)
+
+    case style do
+      style when style in [:decimal, :currency, :percent] ->
+        with {:ok, localize_options} <- translate_options(style, options),
+             {:ok, parts} <- Localize.Number.to_parts(number, localize_options) do
+          {:ok, split_compact_literals(parts)}
+        end
+
+      other ->
+        {:error, invalid_option_error(:style, other, [:decimal, :currency, :percent])}
+    end
+  end
+
+  @doc """
+  Formats a number into a list of typed parts, raising on error.
+
+  Same as `format_to_parts/2` but returns the parts directly or raises.
+
+  ### Arguments
+
+  * `number` is an integer, float, or `Decimal`.
+
+  * `options` is a keyword list of options.
+
+  ### Returns
+
+  * A list of `%{type: atom, value: String.t()}` maps.
+
+  ### Examples
+
+      iex> Intl.NumberFormat.format_to_parts!(56, locale: :en)
+      [%{type: :integer, value: "56"}]
+
+  """
+  @spec format_to_parts!(number() | Decimal.t(), Keyword.t()) ::
+          [%{type: atom(), value: String.t()}] | no_return()
+  def format_to_parts!(number, options \\ []) do
+    case format_to_parts(number, options) do
+      {:ok, parts} -> parts
+      {:error, exception} -> raise exception
+    end
+  end
+
   defp format_unit(number, options) do
     {unit_name, options} = Keyword.pop(options, :unit)
     {unit_display, options} = Keyword.pop(options, :unit_display, :short)
@@ -290,7 +406,9 @@ defmodule Intl.NumberFormat do
            validate_option(options, :currency_display, @currency_displays, :symbol),
          {:ok, currency_sign} <-
            validate_option(options, :currency_sign, @currency_signs, :standard),
-         {:ok, use_grouping} <- validate_option(options, :use_grouping, @use_groupings, :auto) do
+         {:ok, use_grouping} <- validate_option(options, :use_grouping, @use_groupings, :auto),
+         {:ok, rounding_priority} <-
+           validate_option(options, :rounding_priority, @rounding_priorities, :auto) do
       format = resolve_format(style, notation, compact_display, currency_sign, currency_display)
 
       localize_options =
@@ -298,6 +416,7 @@ defmodule Intl.NumberFormat do
         |> Keyword.put(:format, format)
         |> put_currency_symbol(style, currency_display)
         |> put_grouping(use_grouping)
+        |> apply_rounding_priority(rounding_priority)
         |> translate_option(:minimum_fraction_digits, :min_fractional_digits)
         |> translate_option(:maximum_fraction_digits, :max_fractional_digits)
         |> translate_option(:rounding_increment, :round_nearest)
@@ -353,6 +472,55 @@ defmodule Intl.NumberFormat do
     do: Keyword.put_new(options, :currency_symbol, :iso)
 
   defp put_currency_symbol(options, _style, _currency_display), do: options
+
+  # Localize tags a compact affix as a single :compact part including
+  # its spacing (" million"). JS emits the spacing as a separate
+  # :literal part, so split leading and trailing whitespace off.
+  defp split_compact_literals(parts) do
+    Enum.flat_map(parts, fn
+      %{type: :compact, value: value} ->
+        stripped_leading = String.trim_leading(value)
+        stripped = String.trim_trailing(stripped_leading)
+        leading = binary_part(value, 0, byte_size(value) - byte_size(stripped_leading))
+
+        trailing =
+          binary_part(
+            stripped_leading,
+            byte_size(stripped),
+            byte_size(stripped_leading) - byte_size(stripped)
+          )
+
+        literal = fn
+          "" -> []
+          whitespace -> [%{type: :literal, value: whitespace}]
+        end
+
+        literal.(leading) ++ [%{type: :compact, value: stripped}] ++ literal.(trailing)
+
+      part ->
+        [part]
+    end)
+  end
+
+  # ECMA-402 SetNumberFormatDigitOptions: when a significant-digit
+  # bound is present and roundingPriority is :auto, the fraction-digit
+  # bounds are ignored entirely. Implemented here because Localize's
+  # :auto applies both bounds sequentially.
+  defp apply_rounding_priority(options, :auto) do
+    significant? =
+      Keyword.has_key?(options, :minimum_significant_digits) or
+        Keyword.has_key?(options, :maximum_significant_digits)
+
+    options = Keyword.delete(options, :rounding_priority)
+
+    if significant? do
+      Keyword.drop(options, [:minimum_fraction_digits, :maximum_fraction_digits])
+    else
+      options
+    end
+  end
+
+  defp apply_rounding_priority(options, _more_or_less_precision), do: options
 
   defp put_grouping(options, :auto), do: options
   defp put_grouping(options, true), do: put_grouping(options, :always)

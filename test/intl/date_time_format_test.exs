@@ -24,6 +24,86 @@ defmodule Intl.DateTimeFormatTest do
     end
   end
 
+  describe "format/2 component options" do
+    test "date components match a locale format" do
+      assert {:ok, "March 15, 2025"} =
+               Intl.DateTimeFormat.format(~D[2025-03-15],
+                 locale: :en,
+                 year: :numeric,
+                 month: :long,
+                 day: :numeric
+               )
+    end
+
+    test "weekday component" do
+      assert {:ok, "Saturday, March 15, 2025"} =
+               Intl.DateTimeFormat.format(~D[2025-03-15],
+                 locale: :en,
+                 weekday: :long,
+                 year: :numeric,
+                 month: :long,
+                 day: :numeric
+               )
+    end
+
+    test "era component" do
+      assert {:ok, "Mar 15, 2025 AD"} =
+               Intl.DateTimeFormat.format(~D[2025-03-15],
+                 locale: :en,
+                 era: :short,
+                 year: :numeric,
+                 month: :short,
+                 day: :numeric
+               )
+    end
+
+    test "day period component" do
+      assert {:ok, "9 in the morning"} =
+               Intl.DateTimeFormat.format(~T[09:30:00],
+                 locale: :en,
+                 hour: :numeric,
+                 day_period: :long
+               )
+    end
+
+    test "hour12 false renders a 24-hour clock" do
+      assert {:ok, "14:30"} =
+               Intl.DateTimeFormat.format(~T[14:30:00],
+                 locale: :en,
+                 hour: :numeric,
+                 minute: :numeric,
+                 hour12: false
+               )
+    end
+
+    test "hour cycle h23 with 2-digit hour" do
+      assert {:ok, "09:05"} =
+               Intl.DateTimeFormat.format(~T[09:05:00],
+                 locale: :en,
+                 hour: :"2-digit",
+                 minute: :"2-digit",
+                 hour_cycle: :h23
+               )
+    end
+
+    test "time zone name component" do
+      utc = DateTime.from_naive!(~N[2025-03-15 14:30:00], "Etc/UTC")
+
+      assert {:ok, formatted} =
+               Intl.DateTimeFormat.format(utc,
+                 locale: :en,
+                 year: :numeric,
+                 month: :numeric,
+                 day: :numeric,
+                 hour: :numeric,
+                 minute: :numeric,
+                 time_zone_name: :short
+               )
+
+      assert String.ends_with?(formatted, "UTC")
+    end
+  end
+
   describe "format_range/3" do
     test "date range" do
       assert {:ok, _} =

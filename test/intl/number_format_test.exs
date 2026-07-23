@@ -99,7 +99,7 @@ defmodule Intl.NumberFormatTest do
     end
 
     test "currency display as name" do
-      assert {:ok, "1,234 US dollars"} =
+      assert {:ok, "1,234.50 US dollars"} =
                Intl.NumberFormat.format(1234.5,
                  locale: :en,
                  style: :currency,
@@ -145,6 +145,66 @@ defmodule Intl.NumberFormatTest do
                  rounding_increment: 5,
                  maximum_fraction_digits: 0
                )
+    end
+
+    test "minimum integer digits" do
+      assert {:ok, "005"} = Intl.NumberFormat.format(5, locale: :en, minimum_integer_digits: 3)
+
+      assert {:ok, "$005.00"} =
+               Intl.NumberFormat.format(5,
+                 locale: :en,
+                 style: :currency,
+                 currency: :USD,
+                 minimum_integer_digits: 3
+               )
+    end
+
+    test "trailing zero display strip_if_integer" do
+      assert {:ok, "1,000"} =
+               Intl.NumberFormat.format(1000,
+                 locale: :en,
+                 minimum_fraction_digits: 2,
+                 trailing_zero_display: :strip_if_integer
+               )
+
+      assert {:ok, "1,000.50"} =
+               Intl.NumberFormat.format(1000.5,
+                 locale: :en,
+                 minimum_fraction_digits: 2,
+                 trailing_zero_display: :strip_if_integer
+               )
+    end
+
+    test "rounding priority auto ignores fraction bounds when significant digits are set" do
+      assert {:ok, "4.32"} =
+               Intl.NumberFormat.format(4.321,
+                 locale: :en,
+                 maximum_fraction_digits: 1,
+                 maximum_significant_digits: 3
+               )
+    end
+
+    test "rounding priority more and less precision" do
+      assert {:ok, "4.32"} =
+               Intl.NumberFormat.format(4.321,
+                 locale: :en,
+                 maximum_fraction_digits: 1,
+                 maximum_significant_digits: 3,
+                 rounding_priority: :more_precision
+               )
+
+      assert {:ok, "4.3"} =
+               Intl.NumberFormat.format(4.321,
+                 locale: :en,
+                 maximum_fraction_digits: 1,
+                 maximum_significant_digits: 3,
+                 rounding_priority: :less_precision
+               )
+    end
+
+    test "invalid rounding priority returns error" do
+      assert {:error, %ArgumentError{}} =
+               Intl.NumberFormat.format(1, locale: :en, rounding_priority: :bogus)
     end
   end
 
@@ -198,6 +258,50 @@ defmodule Intl.NumberFormatTest do
     test "negative currency renders the sign before the symbol" do
       assert {:ok, "-$1.00"} =
                Intl.NumberFormat.format(-1, locale: :en, style: :currency, currency: :USD)
+    end
+  end
+
+  describe "format_to_parts/2" do
+    test "currency parts" do
+      assert {:ok,
+              [
+                %{type: :currency, value: "$"},
+                %{type: :integer, value: "1"},
+                %{type: :group, value: ","},
+                %{type: :integer, value: "234"},
+                %{type: :decimal, value: "."},
+                %{type: :fraction, value: "50"}
+              ]} =
+               Intl.NumberFormat.format_to_parts(1234.5,
+                 locale: :en,
+                 style: :currency,
+                 currency: :USD
+               )
+    end
+
+    test "compact short affix has no literal when unspaced" do
+      assert {:ok,
+              [
+                %{type: :integer, value: "1"},
+                %{type: :decimal, value: "."},
+                %{type: :fraction, value: "2"},
+                %{type: :compact, value: "K"}
+              ]} = Intl.NumberFormat.format_to_parts(1234, locale: :en, notation: :compact)
+    end
+
+    test "unit style returns error" do
+      assert {:error, %ArgumentError{}} =
+               Intl.NumberFormat.format_to_parts(1, locale: :en, style: :unit, unit: "meter")
+    end
+
+    test "currency display name returns error" do
+      assert {:error, %Localize.InvalidValueError{}} =
+               Intl.NumberFormat.format_to_parts(1,
+                 locale: :en,
+                 style: :currency,
+                 currency: :USD,
+                 currency_display: :name
+               )
     end
   end
 

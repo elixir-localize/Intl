@@ -40,9 +40,9 @@ The full compatibility matrix is in [the Compatibility guide](https://hexdocs.pm
 
 * **Collator returns atoms.** `Intl.Collator.compare/3` returns `:lt`, `:eq`, or `:gt` instead of -1, 0, or 1.
 
-* **`formatToParts` is not supported** in any module. The underlying Localize library does not expose structured format parts.
+* **`formatToParts` is supported for numbers** via `Intl.NumberFormat.format_to_parts/2`; the other modules do not yet expose structured parts.
 
-* **`resolvedOptions` and `supportedLocalesOf` are not wrapped.** Use `Localize.available_locale_id?/1` to check locale support directly.
+* **`supportedLocalesOf` is one top-level function**, `Intl.supported_locales_of/1`, since all modules share the same CLDR locale data. `resolvedOptions` is not implemented.
 
 * **Segmenter output is simplified.** Returns a flat list of strings rather than the JS iterable of rich segment objects.
 
@@ -198,7 +198,7 @@ Add `intl` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:intl, "~> 0.3.0"}
+    {:intl, "~> 1.0-rc"}
   ]
 end
 ```

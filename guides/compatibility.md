@@ -15,7 +15,8 @@ Return values use Elixir's `{:ok, result}` / `{:error, reason}` convention. Bang
 | JS Intl Method | Elixir Function | Status |
 |---|---|---|
 | `Intl.getCanonicalLocales()` | `Intl.get_canonical_locales/1` | Compatible |
-| `Intl.supportedValuesOf()` | `Intl.supported_values_of/1` | Partial — supports `:calendar`, `:currency`, `:numbering_system`, `:unit`. Does not support `"collation"` or `"timeZone"`. |
+| `supportedLocalesOf()` (per constructor) | `Intl.supported_locales_of/1` | One top-level function — all modules share the same CLDR locale data |
+| `Intl.supportedValuesOf()` | `Intl.supported_values_of/1` | Compatible — supports `:calendar`, `:collation`, `:currency`, `:numbering_system`, `:time_zone`, and `:unit`. |
 
 ## Intl.NumberFormat
 
@@ -23,10 +24,10 @@ Return values use Elixir's `{:ok, result}` / `{:error, reason}` convention. Bang
 |---|---|---|
 | `format()` | `Intl.NumberFormat.format/2` | Compatible |
 | `formatRange()` | `Intl.NumberFormat.format_range/3` | Compatible — supports `:decimal`, `:currency`, and `:percent` styles. `:unit` ranges are not supported. |
-| `formatToParts()` | — | Not supported |
+| `formatToParts()` | `Intl.NumberFormat.format_to_parts/2` | Compatible for `:decimal`, `:currency`, and `:percent` styles. Part types are snake_case atoms (`:minus_sign` rather than `"minusSign"`). `:unit` style and `currency_display: :name` are not supported. |
 | `formatRangeToParts()` | — | Not supported |
 | `resolvedOptions()` | — | Not supported |
-| `supportedLocalesOf()` | — | Use `Localize.available_locale_id?/1` directly |
+| `supportedLocalesOf()` | — | Use `Intl.supported_locales_of/1` |
 
 ### NumberFormat Option Mapping
 
@@ -40,20 +41,20 @@ Return values use Elixir's `{:ok, result}` / `{:error, reason}` convention. Bang
 | `compactDisplay` | `:compact_display` | `:short` or `:long`. Compact currency always uses the short form (CLDR defines no long compact currency format). |
 | `minimumFractionDigits` | `:minimum_fraction_digits` | Mapped to `:min_fractional_digits` in Localize |
 | `maximumFractionDigits` | `:maximum_fraction_digits` | Mapped to `:max_fractional_digits` in Localize |
-| `minimumIntegerDigits` | — | Not supported (Localize has no zero-padding option) |
+| `minimumIntegerDigits` | `:minimum_integer_digits` | Pass-through; integer in `1..21` |
 | `minimumSignificantDigits` | `:minimum_significant_digits` | Pass-through; integer in `1..21` |
 | `maximumSignificantDigits` | `:maximum_significant_digits` | Pass-through; integer in `1..21` |
 | `useGrouping` | `:use_grouping` | `:always`, `:auto`, `:min2`, `true`, `false`. Mapped to Localize `:minimum_grouping_digits`. |
 | `signDisplay` | `:sign_display` | `:auto`, `:always`, `:except_zero`, `:negative`, `:never`. Pass-through to Localize. |
-| `currencyDisplay` | `:currency_display` | `:symbol`, `:narrow_symbol`, `:code`, `:name`. `:name` renders via the Localize `:currency_long` format, which formats the number as a decimal (no forced currency fraction digits). |
+| `currencyDisplay` | `:currency_display` | `:symbol`, `:narrow_symbol`, `:code`, `:name`. `:name` renders via the Localize `:currency_long` format with the currency's fraction digits applied ("1,234.50 US dollars"), matching JS. |
 | `currencySign` | `:currency_sign` | `:standard` or `:accounting`. `:accounting` maps to the Localize `:accounting` format. |
 | `numberingSystem` | `:numbering_system` | Mapped to Localize `:number_system`. Any valid CLDR numbering system may be used with any locale, including algorithmic systems. A `-u-nu-` locale extension is also honoured. |
 | `roundingIncrement` | `:rounding_increment` | Mapped to Localize `:round_nearest`. Any positive integer is accepted (JS restricts the value set). |
 | `roundingMode` | `:rounding_mode` | Pass-through to Localize |
-| `roundingPriority` | — | Not supported |
-| `trailingZeroDisplay` | — | Not supported |
+| `roundingPriority` | `:rounding_priority` | `:auto`, `:more_precision`, `:less_precision`, per ECMA-402 |
+| `trailingZeroDisplay` | `:trailing_zero_display` | `:auto` or `:strip_if_integer` |
 
-When both fraction-digit and significant-digit options are given, significant digits take precedence (equivalent to the JS default `roundingPriority: "auto"`).
+With the default `rounding_priority: :auto`, a significant-digit bound causes the fraction-digit bounds to be ignored entirely, per ECMA-402.
 
 Compact notation applies the ECMA-402 default precision of at most two significant digits on the mantissa, matching JS (`1234` formats as "1.2K").
 
@@ -66,7 +67,7 @@ Compact notation applies the ECMA-402 default precision of at most two significa
 | `formatToParts()` | — | Not supported |
 | `formatRangeToParts()` | — | Not supported |
 | `resolvedOptions()` | — | Not supported |
-| `supportedLocalesOf()` | — | Use `Localize.available_locale_id?/1` directly |
+| `supportedLocalesOf()` | — | Use `Intl.supported_locales_of/1` |
 
 ### DateTimeFormat Option Mapping
 
@@ -83,13 +84,13 @@ Compact notation applies the ECMA-402 default precision of at most two significa
 | `second` | `:second` | Component option |
 | `timeZone` | `:time_zone` | Pass-through |
 | `calendar` | `:calendar` | Pass-through |
-| `hour12` | — | Not directly supported; use locale extensions instead |
-| `hourCycle` | — | Not supported |
-| `timeZoneName` | — | Not supported |
-| `numberingSystem` | — | Not supported |
-| `era` | — | Not supported as a standalone component |
-| `fractionalSecondDigits` | — | Not supported |
-| `dayPeriod` | — | Not supported |
+| `hour12` | `:hour12` | Boolean; selects the 12- or 24-hour symbol for the `:hour` component |
+| `hourCycle` | `:hour_cycle` | `:h11`, `:h12`, `:h23`, `:h24`. Takes precedence over `:hour12`. |
+| `timeZoneName` | `:time_zone_name` | `:short`, `:long`, `:short_offset`, `:long_offset`, `:short_generic`, `:long_generic` |
+| `numberingSystem` | — | Use a `-u-nu-` locale extension (for example, `locale: "en-u-nu-thai"`) |
+| `era` | `:era` | `:long`, `:short`, `:narrow` |
+| `fractionalSecondDigits` | — | Not supported (pending fractional-second skeleton support in Localize) |
+| `dayPeriod` | `:day_period` | `:long`, `:short`, `:narrow` — flexible day periods ("in the morning") |
 
 ### DateTimeFormat Input Types
 
@@ -102,7 +103,7 @@ The JS API accepts `Date` objects. This library accepts Elixir `Date`, `Time`, `
 | `format()` | `Intl.ListFormat.format/2` | Compatible |
 | `formatToParts()` | — | Not supported |
 | `resolvedOptions()` | — | Not supported |
-| `supportedLocalesOf()` | — | Use `Localize.available_locale_id?/1` directly |
+| `supportedLocalesOf()` | — | Use `Intl.supported_locales_of/1` |
 
 ### ListFormat Option Mapping
 
@@ -119,7 +120,7 @@ The combination of `type` and `style` is mapped to a Localize list format atom (
 |---|---|---|
 | `of()` | `Intl.DisplayNames.of/2` | Partial |
 | `resolvedOptions()` | — | Not supported |
-| `supportedLocalesOf()` | — | Use `Localize.available_locale_id?/1` directly |
+| `supportedLocalesOf()` | — | Use `Intl.supported_locales_of/1` |
 
 ### DisplayNames Type Support
 
@@ -139,30 +140,28 @@ The combination of `type` and `style` is mapped to a Localize list format atom (
 | `format()` | `Intl.RelativeTimeFormat.format/3` | Compatible |
 | `formatToParts()` | — | Not supported |
 | `resolvedOptions()` | — | Not supported |
-| `supportedLocalesOf()` | — | Use `Localize.available_locale_id?/1` directly |
+| `supportedLocalesOf()` | — | Use `Intl.supported_locales_of/1` |
 
 ### RelativeTimeFormat Option Mapping
 
 | JS Option | Elixir Option | Notes |
 |---|---|---|
 | `style` | `:style` | `:long`, `:short`, `:narrow`. Mapped to Localize `:format` (`:standard`, `:short`, `:narrow`). |
-| `numeric` | `:numeric` | `:always` or `:auto`. Currently Localize always uses `:auto` behavior. |
+| `numeric` | `:numeric` | `:always` or `:auto`. `:always` forces numeric output ("1 day ago" instead of "yesterday"). |
 | `localeMatcher` | — | Not supported |
 
 ### RelativeTimeFormat Differences
 
 The JS API signature is `format(value, unit)` where both are required. The Elixir API is `format(value, unit, options)` with the unit as a separate argument rather than a string parameter.
 
-The `:numeric` option with value `:always` is accepted but may not force numeric output in all cases, as the underlying Localize library defaults to auto-detection (using "yesterday"/"tomorrow" when the value is -1/+1).
-
 ## Intl.PluralRules
 
 | JS Method | Elixir Function | Status |
 |---|---|---|
 | `select()` | `Intl.PluralRules.select/2` | Compatible |
-| `selectRange()` | — | Not supported |
+| `selectRange()` | `Intl.PluralRules.select_range/3` | Compatible — uses the CLDR plural-ranges data |
 | `resolvedOptions()` | — | Not supported |
-| `supportedLocalesOf()` | — | Use `Localize.available_locale_id?/1` directly |
+| `supportedLocalesOf()` | — | Use `Intl.supported_locales_of/1` |
 
 ### PluralRules Differences
 
@@ -174,7 +173,7 @@ Returns `{:ok, atom}` (for example, `{:ok, :one}`) instead of a string like `"on
 |---|---|---|
 | `compare()` | `Intl.Collator.compare/3` | Compatible (different return type) |
 | `resolvedOptions()` | — | Not supported |
-| `supportedLocalesOf()` | — | Use `Localize.available_locale_id?/1` directly |
+| `supportedLocalesOf()` | — | Use `Intl.supported_locales_of/1` |
 
 ### Collator Differences
 
@@ -190,8 +189,8 @@ An additional `sort/2` convenience function is provided that is not present in t
 | `caseFirst` | `:case_first` | Pass-through to Localize |
 | `numeric` | `:numeric` | Pass-through to Localize |
 | `ignorePunctuation` | `:ignore_punctuation` | Mapped to Localize `alternate: :shifted` |
-| `usage` | — | Not supported (Localize always uses sort semantics) |
-| `collation` | — | Not supported |
+| `usage` | `:usage` | `:sort` (default) or `:search`. `:search` selects the locale's search collation tailoring. |
+| `collation` | `:collation` | Collation type atom (`:phonebook`, `:pinyin`, `:emoji`, …), mapped to Localize `:type`. Ignored when `:usage` is `:search`. |
 | `localeMatcher` | — | Not supported |
 
 ## Intl.DurationFormat
@@ -201,7 +200,7 @@ An additional `sort/2` convenience function is provided that is not present in t
 | `format()` | `Intl.DurationFormat.format/2` | Compatible |
 | `formatToParts()` | — | Not supported |
 | `resolvedOptions()` | — | Not supported |
-| `supportedLocalesOf()` | — | Use `Localize.available_locale_id?/1` directly |
+| `supportedLocalesOf()` | — | Use `Intl.supported_locales_of/1` |
 
 ### DurationFormat Differences
 
@@ -220,7 +219,7 @@ The JS API accepts a plain object with `years`, `months`, `days`, `hours`, `minu
 |---|---|---|
 | `segment()` | `Intl.Segmenter.segment/2` | Partial |
 | `resolvedOptions()` | — | Not supported |
-| `supportedLocalesOf()` | — | Use `Localize.available_locale_id?/1` directly |
+| `supportedLocalesOf()` | — | Use `Intl.supported_locales_of/1` |
 
 ### Segmenter Granularity Support
 
@@ -240,10 +239,8 @@ The JS API accepts a plain object with `years`, `months`, `days`, `hours`, `minu
 
 ## Features Not Supported Across All Modules
 
-* **`formatToParts`** — Not available in any module. The underlying Localize library does not expose structured format parts.
+* **`formatToParts`** — Available for `Intl.NumberFormat` (`format_to_parts/2`). The other modules do not yet expose structured format parts.
 
 * **`resolvedOptions`** — Not implemented. In the JS API this returns the effective options after locale negotiation and default resolution. Could be added in a future version.
-
-* **`supportedLocalesOf`** — Not wrapped. Use `Localize.available_locale_id?/1` directly to check locale support.
 
 * **`localeMatcher`** — The JS `localeMatcher` option (`"best fit"` / `"lookup"`) is not supported. Localize uses its own locale resolution strategy.

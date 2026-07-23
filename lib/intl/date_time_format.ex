@@ -12,16 +12,40 @@ defmodule Intl.DateTimeFormat do
   """
 
   @skeleton_components %{
+    era: %{long: "GGGG", short: "G", narrow: "GGGGG"},
     weekday: %{long: "EEEE", short: "EEE", narrow: "EEEEE"},
     year: %{numeric: "y", "2-digit": "yy"},
     month: %{numeric: "M", "2-digit": "MM", long: "MMMM", short: "MMM", narrow: "MMMMM"},
     day: %{numeric: "d", "2-digit": "dd"},
+    day_period: %{long: "BBBB", short: "B", narrow: "BBBBB"},
     hour: %{numeric: "h", "2-digit": "hh"},
     minute: %{numeric: "m", "2-digit": "mm"},
-    second: %{numeric: "s", "2-digit": "ss"}
+    second: %{numeric: "s", "2-digit": "ss"},
+    time_zone_name: %{
+      short: "z",
+      long: "zzzz",
+      short_offset: "O",
+      long_offset: "OOOO",
+      short_generic: "v",
+      long_generic: "vvvv"
+    }
   }
 
-  @skeleton_order [:weekday, :year, :month, :day, :hour, :minute, :second]
+  @skeleton_order [
+    :era,
+    :weekday,
+    :year,
+    :month,
+    :day,
+    :day_period,
+    :hour,
+    :minute,
+    :second,
+    :time_zone_name
+  ]
+
+  # JS hourCycle values mapped to the CLDR hour format symbol.
+  @hour_cycle_symbols %{h11: "K", h12: "h", h23: "H", h24: "k"}
 
   @doc """
   Formats a date, time, or datetime value according to locale conventions.
@@ -46,6 +70,9 @@ defmodule Intl.DateTimeFormat do
     Provides a predefined time format. Cannot be combined with
     individual component options.
 
+  * `:era` is `:long`, `:short`, or `:narrow` (for example,
+    "Anno Domini", "AD", "A").
+
   * `:weekday` is `:long`, `:short`, or `:narrow`.
 
   * `:year` is `:numeric` or `:"2-digit"`.
@@ -60,6 +87,19 @@ defmodule Intl.DateTimeFormat do
   * `:minute` is `:numeric` or `:"2-digit"`.
 
   * `:second` is `:numeric` or `:"2-digit"`.
+
+  * `:day_period` is `:long`, `:short`, or `:narrow`. Renders
+    flexible day periods such as "in the morning" or "noon".
+
+  * `:time_zone_name` is `:short`, `:long`, `:short_offset`,
+    `:long_offset`, `:short_generic`, or `:long_generic`. Only
+    applies to `DateTime` values with a time zone.
+
+  * `:hour12` is a boolean selecting a 12-hour (`true`) or
+    24-hour (`false`) clock for the `:hour` component.
+
+  * `:hour_cycle` is `:h11`, `:h12`, `:h23`, or `:h24`. Takes
+    precedence over `:hour12`.
 
   * `:time_zone` is a time zone identifier string (for example,
     `"America/New_York"`).
@@ -83,6 +123,12 @@ defmodule Intl.DateTimeFormat do
 
       iex> Intl.DateTimeFormat.format(~N[2017-07-10 14:30:00], locale: :en, date_style: :medium, time_style: :short, prefer: :ascii)
       {:ok, "Jul 10, 2017, 2:30 PM"}
+
+      iex> Intl.DateTimeFormat.format(~D[2017-07-10], locale: :en, year: :numeric, month: :long, day: :numeric)
+      {:ok, "July 10, 2017"}
+
+      iex> Intl.DateTimeFormat.format(~T[14:30:00], locale: :en, hour: :numeric, minute: :numeric, hour12: false)
+      {:ok, "14:30"}
 
   """
   @spec format(Date.t() | Time.t() | DateTime.t() | NaiveDateTime.t() | map(), Keyword.t()) ::
@@ -237,22 +283,52 @@ defmodule Intl.DateTimeFormat do
 
     options
     |> Keyword.drop(Map.keys(@skeleton_components))
+    |> Keyword.drop([:hour12, :hour_cycle])
     |> Keyword.put(:format, skeleton)
   end
 
+  # Skeletons must be atoms: Localize treats an atom :format as a
+  # skeleton to match against the locale's formats, and a string
+  # :format as a literal pattern.
   defp build_skeleton(options) do
+    hour_symbol = hour_symbol(options)
+
     @skeleton_order
     |> Enum.map(fn component ->
       case Keyword.fetch(options, component) do
         {:ok, value} ->
           components = Map.fetch!(@skeleton_components, component)
-          Map.get(components, value, "")
+          component_symbol(components, value, component, hour_symbol)
 
         :error ->
           ""
       end
     end)
     |> Enum.join()
+    |> String.to_atom()
+  end
+
+  defp component_symbol(components, value, :hour, hour_symbol) do
+    case Map.get(components, value, "") do
+      "" -> ""
+      symbol -> String.duplicate(hour_symbol, String.length(symbol))
+    end
+  end
+
+  defp component_symbol(components, value, _component, _hour_symbol) do
+    Map.get(components, value, "")
+  end
+
+  defp hour_symbol(options) do
+    hour_cycle = Keyword.get(options, :hour_cycle)
+    hour12 = Keyword.get(options, :hour12)
+
+    cond do
+      hour_cycle -> Map.get(@hour_cycle_symbols, hour_cycle, "h")
+      hour12 == true -> "h"
+      hour12 == false -> "H"
+      true -> "h"
+    end
   end
 
   defp has_component_options?(options) do
