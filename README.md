@@ -77,6 +77,16 @@ iex> Intl.NumberFormat.format(1234.5, locale: :en, maximum_significant_digits: 3
 
 iex> Intl.NumberFormat.format(1234.5, locale: :en, sign_display: :always)
 {:ok, "+1,234.5"}
+
+iex> Intl.NumberFormat.format_to_parts(-1234.5, locale: :en)
+{:ok, [
+  %{type: :minus_sign, value: "-"},
+  %{type: :integer, value: "1"},
+  %{type: :group, value: ","},
+  %{type: :integer, value: "234"},
+  %{type: :decimal, value: "."},
+  %{type: :fraction, value: "5"}
+]}
 ```
 
 ### Date and Time Formatting

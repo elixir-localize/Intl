@@ -104,6 +104,84 @@ defmodule Intl.ListFormat do
     end
   end
 
+  @doc """
+  Formats a list into typed parts.
+
+  Modelled on the JS `Intl.ListFormat.formatToParts()`. Each list
+  element becomes an `:element` part and each separator becomes a
+  `:literal` part.
+
+  ### Arguments
+
+  * `list` is a list of terms that implement `String.Chars`.
+
+  * `options` is a keyword list of options. Accepts the same
+    options as `format/2`.
+
+  ### Returns
+
+  * `{:ok, parts}` where `parts` is a list of
+    `%{type: atom, value: String.t()}` maps.
+
+  * `{:error, reason}` if the locale or options are invalid.
+
+  ### Examples
+
+      iex> Intl.ListFormat.format_to_parts(["a", "b", "c"], locale: :en)
+      {:ok, [
+        %{type: :element, value: "a"},
+        %{type: :literal, value: ", "},
+        %{type: :element, value: "b"},
+        %{type: :literal, value: ", and "},
+        %{type: :element, value: "c"}
+      ]}
+
+  """
+  @spec format_to_parts([term()], Keyword.t()) ::
+          {:ok, [%{type: atom(), value: String.t()}]} | {:error, term()}
+  def format_to_parts(list, options \\ []) do
+    {type, options} = Keyword.pop(options, :type, :conjunction)
+    {style, options} = Keyword.pop(options, :style, :long)
+
+    case resolve_format(type, style) do
+      {:ok, localize_format} ->
+        Localize.List.to_parts(list, Keyword.put(options, :list_style, localize_format))
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  @doc """
+  Formats a list into typed parts, raising on error.
+
+  Same as `format_to_parts/2` but returns the parts directly or raises.
+
+  ### Arguments
+
+  * `list` is a list of terms that implement `String.Chars`.
+
+  * `options` is a keyword list of options.
+
+  ### Returns
+
+  * A list of `%{type: atom, value: String.t()}` maps.
+
+  ### Examples
+
+      iex> Intl.ListFormat.format_to_parts!(["a", "b"], locale: :en) |> length()
+      3
+
+  """
+  @spec format_to_parts!([term()], Keyword.t()) ::
+          [%{type: atom(), value: String.t()}] | no_return()
+  def format_to_parts!(list, options \\ []) do
+    case format_to_parts(list, options) do
+      {:ok, parts} -> parts
+      {:error, exception} -> raise exception
+    end
+  end
+
   defp resolve_format(type, style) do
     case Map.fetch(@format_map, {type, style}) do
       {:ok, format} ->

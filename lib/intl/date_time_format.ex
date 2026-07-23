@@ -21,6 +21,7 @@ defmodule Intl.DateTimeFormat do
     hour: %{numeric: "h", "2-digit": "hh"},
     minute: %{numeric: "m", "2-digit": "mm"},
     second: %{numeric: "s", "2-digit": "ss"},
+    fractional_second_digits: %{1 => "S", 2 => "SS", 3 => "SSS"},
     time_zone_name: %{
       short: "z",
       long: "zzzz",
@@ -41,6 +42,7 @@ defmodule Intl.DateTimeFormat do
     :hour,
     :minute,
     :second,
+    :fractional_second_digits,
     :time_zone_name
   ]
 
@@ -90,6 +92,9 @@ defmodule Intl.DateTimeFormat do
 
   * `:day_period` is `:long`, `:short`, or `:narrow`. Renders
     flexible day periods such as "in the morning" or "noon".
+
+  * `:fractional_second_digits` is `1`, `2`, or `3`. Renders
+    that many fractional-second digits after the seconds field.
 
   * `:time_zone_name` is `:short`, `:long`, `:short_offset`,
     `:long_offset`, `:short_generic`, or `:long_generic`. Only
@@ -171,6 +176,92 @@ defmodule Intl.DateTimeFormat do
   def format!(value, options \\ []) do
     case format(value, options) do
       {:ok, string} -> string
+      {:error, exception} -> raise exception
+    end
+  end
+
+  @doc """
+  Formats a date, time, or datetime into a list of typed parts.
+
+  Modelled on the JS `Intl.DateTimeFormat.formatToParts()`. Each
+  part is a map with a `:type` and a `:value` key. Part types
+  include `:year`, `:month`, `:day`, `:weekday`, `:era`, `:hour`,
+  `:minute`, `:second`, `:fractional_second`, `:day_period`,
+  `:time_zone_name`, and `:literal`.
+
+  ### Arguments
+
+  * `value` is a `Date`, `Time`, `DateTime`, or `NaiveDateTime`
+    struct, or a map with date and/or time keys.
+
+  * `options` is a keyword list of options. Accepts the same
+    options as `format/2`.
+
+  ### Returns
+
+  * `{:ok, parts}` where `parts` is a list of
+    `%{type: atom, value: String.t()}` maps.
+
+  * `{:error, reason}` if the value or options are invalid.
+
+  ### Examples
+
+      iex> Intl.DateTimeFormat.format_to_parts(~D[2017-07-10], locale: :en, year: :numeric, month: :long, day: :numeric)
+      {:ok, [
+        %{type: :month, value: "July"},
+        %{type: :literal, value: " "},
+        %{type: :day, value: "10"},
+        %{type: :literal, value: ", "},
+        %{type: :year, value: "2017"}
+      ]}
+
+  """
+  @spec format_to_parts(
+          Date.t() | Time.t() | DateTime.t() | NaiveDateTime.t() | map(),
+          Keyword.t()
+        ) ::
+          {:ok, [%{type: atom(), value: String.t()}]} | {:error, term()}
+  def format_to_parts(value, options \\ []) do
+    localize_options = translate_options(options)
+
+    cond do
+      is_datetime?(value) -> Localize.DateTime.to_parts(value, localize_options)
+      is_date?(value) -> Localize.Date.to_parts(value, localize_options)
+      is_time?(value) -> Localize.Time.to_parts(value, localize_options)
+      true -> {:error, ArgumentError.exception("Unsupported value type: #{inspect(value)}")}
+    end
+  end
+
+  @doc """
+  Formats a date, time, or datetime into typed parts, raising on error.
+
+  Same as `format_to_parts/2` but returns the parts directly or raises.
+
+  ### Arguments
+
+  * `value` is a `Date`, `Time`, `DateTime`, or `NaiveDateTime`
+    struct, or a map with date and/or time keys.
+
+  * `options` is a keyword list of options.
+
+  ### Returns
+
+  * A list of `%{type: atom, value: String.t()}` maps.
+
+  ### Examples
+
+      iex> Intl.DateTimeFormat.format_to_parts!(~D[2017-07-10], locale: :en, date_style: :short) |> length()
+      5
+
+  """
+  @spec format_to_parts!(
+          Date.t() | Time.t() | DateTime.t() | NaiveDateTime.t() | map(),
+          Keyword.t()
+        ) ::
+          [%{type: atom(), value: String.t()}] | no_return()
+  def format_to_parts!(value, options \\ []) do
+    case format_to_parts(value, options) do
+      {:ok, parts} -> parts
       {:error, exception} -> raise exception
     end
   end

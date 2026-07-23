@@ -104,6 +104,50 @@ defmodule Intl.DateTimeFormatTest do
     end
   end
 
+  describe "format_to_parts/2" do
+    test "component options decompose" do
+      assert {:ok,
+              [
+                %{type: :month, value: "July"},
+                %{type: :literal, value: " "},
+                %{type: :day, value: "10"},
+                %{type: :literal, value: ", "},
+                %{type: :year, value: "2017"}
+              ]} =
+               Intl.DateTimeFormat.format_to_parts(~D[2017-07-10],
+                 locale: :en,
+                 year: :numeric,
+                 month: :long,
+                 day: :numeric
+               )
+    end
+
+    test "style parts concatenate to the formatted string" do
+      options = [locale: :en, date_style: :medium, time_style: :short, prefer: :ascii]
+      {:ok, parts} = Intl.DateTimeFormat.format_to_parts(~N[2017-07-10 14:30:00], options)
+      {:ok, string} = Intl.DateTimeFormat.format(~N[2017-07-10 14:30:00], options)
+
+      assert Enum.map_join(parts, & &1.value) == string
+    end
+  end
+
+  describe "format/2 fractional seconds" do
+    test "fractional_second_digits renders and decomposes" do
+      options = [
+        locale: :en,
+        hour: :numeric,
+        minute: :numeric,
+        second: :numeric,
+        fractional_second_digits: 2
+      ]
+
+      assert {:ok, "9:30:12.34 AM"} = Intl.DateTimeFormat.format(~T[09:30:12.345], options)
+
+      {:ok, parts} = Intl.DateTimeFormat.format_to_parts(~T[09:30:12.345], options)
+      assert %{type: :fractional_second, value: "34"} in parts
+    end
+  end
+
   describe "format_range/3" do
     test "date range" do
       assert {:ok, _} =

@@ -129,13 +129,7 @@ defmodule Intl.PluralRules do
           {:ok, atom()} | {:error, term()}
   def select_range(start_number, end_number, options \\ []) do
     locale = Keyword.get(options, :locale, Localize.get_locale())
-
-    with {:ok, start_category} <- select(start_number, options),
-         {:ok, end_category} <- select(end_number, options),
-         {:ok, language_tag} <- Localize.validate_locale(locale) do
-      language = to_string(language_tag.language)
-      {:ok, resolve_range(language, start_category, end_category)}
-    end
+    Localize.Number.PluralRule.Range.plural_rule_for(start_number, end_number, locale)
   end
 
   @doc """
@@ -169,20 +163,5 @@ defmodule Intl.PluralRules do
       {:ok, category} -> category
       {:error, exception} -> raise exception
     end
-  end
-
-  # TR35 plural ranges: a <start, end> pair without an explicit rule
-  # (including languages with no plural-ranges data) resolves to the
-  # end category.
-  defp resolve_range(language, start_category, end_category) do
-    ranges =
-      Enum.find_value(Localize.SupplementalData.plural_ranges(), [], fn entry ->
-        if language in entry.locales, do: entry.ranges
-      end)
-
-    Enum.find_value(ranges, end_category, fn
-      %{start: ^start_category, end: ^end_category, result: result} -> result
-      _range -> nil
-    end)
   end
 end

@@ -82,6 +82,90 @@ defmodule Intl.RelativeTimeFormat do
   end
 
   @doc """
+  Formats a relative time value into typed parts.
+
+  Modelled on the JS `Intl.RelativeTimeFormat.formatToParts()`.
+  Named forms ("yesterday") are a single `:literal` part; numeric
+  forms tag the number as an `:integer` part carrying a `:unit`
+  key, with the surrounding pattern text as `:literal` parts.
+
+  ### Arguments
+
+  * `value` is an integer offset.
+
+  * `unit` is the time unit atom.
+
+  * `options` is a keyword list of options. Accepts the same
+    options as `format/3`.
+
+  ### Returns
+
+  * `{:ok, parts}` where `parts` is a list of
+    `%{type: atom, value: String.t()}` maps; `:integer` parts
+    also carry a `:unit` key.
+
+  * `{:error, reason}` if the value, unit, or options are invalid.
+
+  ### Examples
+
+      iex> Intl.RelativeTimeFormat.format_to_parts(-1, :day, locale: :en)
+      {:ok, [%{type: :literal, value: "yesterday"}]}
+
+      iex> Intl.RelativeTimeFormat.format_to_parts(-3, :day, locale: :en)
+      {:ok, [
+        %{type: :integer, value: "3", unit: :day},
+        %{type: :literal, value: " days ago"}
+      ]}
+
+  """
+  @spec format_to_parts(integer(), atom(), Keyword.t()) ::
+          {:ok, [%{type: atom(), value: String.t()}]} | {:error, term()}
+  def format_to_parts(value, unit, options \\ []) do
+    {style, options} = Keyword.pop(options, :style, :long)
+
+    localize_format = Map.get(@style_to_format, style, :standard)
+
+    localize_options =
+      options
+      |> Keyword.put(:unit, unit)
+      |> Keyword.put(:format, localize_format)
+
+    Localize.DateTime.Relative.to_parts(value, localize_options)
+  end
+
+  @doc """
+  Formats a relative time value into typed parts, raising on error.
+
+  Same as `format_to_parts/3` but returns the parts directly or raises.
+
+  ### Arguments
+
+  * `value` is an integer offset.
+
+  * `unit` is the time unit atom.
+
+  * `options` is a keyword list of options.
+
+  ### Returns
+
+  * A list of `%{type: atom, value: String.t()}` maps.
+
+  ### Examples
+
+      iex> Intl.RelativeTimeFormat.format_to_parts!(-1, :day, locale: :en)
+      [%{type: :literal, value: "yesterday"}]
+
+  """
+  @spec format_to_parts!(integer(), atom(), Keyword.t()) ::
+          [%{type: atom(), value: String.t()}] | no_return()
+  def format_to_parts!(value, unit, options \\ []) do
+    case format_to_parts(value, unit, options) do
+      {:ok, parts} -> parts
+      {:error, exception} -> raise exception
+    end
+  end
+
+  @doc """
   Formats a relative time value, raising on error.
 
   Same as `format/3` but returns the string directly or raises.

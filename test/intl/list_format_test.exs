@@ -25,4 +25,28 @@ defmodule Intl.ListFormatTest do
       assert {:error, _} = Intl.ListFormat.format(["a"], locale: :en, type: :invalid)
     end
   end
+
+  describe "format_to_parts/2" do
+    test "elements and literals are tagged" do
+      assert {:ok,
+              [
+                %{type: :element, value: "a"},
+                %{type: :literal, value: ", "},
+                %{type: :element, value: "b"},
+                %{type: :literal, value: ", and "},
+                %{type: :element, value: "c"}
+              ]} = Intl.ListFormat.format_to_parts(["a", "b", "c"], locale: :en)
+    end
+
+    test "type and style apply" do
+      {:ok, parts} =
+        Intl.ListFormat.format_to_parts(["a", "b"], locale: :en, type: :disjunction)
+
+      assert Enum.map_join(parts, & &1.value) == "a or b"
+    end
+
+    test "invalid type returns error" do
+      assert {:error, _} = Intl.ListFormat.format_to_parts(["a"], locale: :en, type: :invalid)
+    end
+  end
 end

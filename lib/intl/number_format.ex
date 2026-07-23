@@ -223,8 +223,9 @@ defmodule Intl.NumberFormat do
   * `number_end` is the end of the range.
 
   * `options` is a keyword list of options. Accepts the same
-    options as `format/2` (except `:style` must be `:decimal`,
-    `:currency`, or `:percent`; `:unit` ranges are not supported).
+    options as `format/2`, including `style: :unit` with `:unit`
+    and `:unit_display` (the unit pattern is applied once to the
+    range, "2–5 kilometers").
 
   ### Returns
 
@@ -247,13 +248,16 @@ defmodule Intl.NumberFormat do
     {style, options} = Keyword.pop(options, :style, :decimal)
 
     case style do
+      :unit ->
+        unit_range(number_start, number_end, options)
+
       style when style in [:decimal, :currency, :percent] ->
         with {:ok, localize_options} <- translate_options(style, options) do
           Localize.Number.to_range_string(number_start, number_end, localize_options)
         end
 
       other ->
-        {:error, invalid_option_error(:style, other, [:decimal, :currency, :percent])}
+        {:error, invalid_option_error(:style, other, [:decimal, :currency, :percent, :unit])}
     end
   end
 
@@ -289,6 +293,89 @@ defmodule Intl.NumberFormat do
   end
 
   @doc """
+  Formats a range of numbers into a list of typed parts.
+
+  Modelled on the JS `Intl.NumberFormat.formatRangeToParts()`. In
+  addition to `:type` and `:value`, each part carries a `:source`
+  key: `:start_range`, `:end_range`, or `:shared`.
+
+  ### Arguments
+
+  * `number_start` is the start of the range.
+
+  * `number_end` is the end of the range.
+
+  * `options` is a keyword list of options. Accepts the same
+    options as `format/2` (except `:style` must be `:decimal`,
+    `:currency`, or `:percent`; `:unit` range parts are not
+    supported).
+
+  ### Returns
+
+  * `{:ok, parts}` where `parts` is a list of
+    `%{type: atom, value: String.t(), source: atom}` maps.
+
+  * `{:error, reason}` if options or input are invalid.
+
+  ### Examples
+
+      iex> Intl.NumberFormat.format_range_to_parts(3, 5, locale: :en)
+      {:ok, [
+        %{type: :integer, value: "3", source: :start_range},
+        %{type: :literal, value: "–", source: :shared},
+        %{type: :integer, value: "5", source: :end_range}
+      ]}
+
+  """
+  @spec format_range_to_parts(number(), number(), Keyword.t()) ::
+          {:ok, [%{type: atom(), value: String.t(), source: atom()}]} | {:error, term()}
+  def format_range_to_parts(number_start, number_end, options \\ []) do
+    {style, options} = Keyword.pop(options, :style, :decimal)
+
+    case style do
+      style when style in [:decimal, :currency, :percent] ->
+        with {:ok, localize_options} <- translate_options(style, options) do
+          Localize.Number.to_range_parts(number_start, number_end, localize_options)
+        end
+
+      other ->
+        {:error, invalid_option_error(:style, other, [:decimal, :currency, :percent])}
+    end
+  end
+
+  @doc """
+  Formats a range of numbers into typed parts, raising on error.
+
+  Same as `format_range_to_parts/3` but returns the parts directly or raises.
+
+  ### Arguments
+
+  * `number_start` is the start of the range.
+
+  * `number_end` is the end of the range.
+
+  * `options` is a keyword list of options.
+
+  ### Returns
+
+  * A list of `%{type: atom, value: String.t(), source: atom}` maps.
+
+  ### Examples
+
+      iex> Intl.NumberFormat.format_range_to_parts!(3, 5, locale: :en) |> length()
+      3
+
+  """
+  @spec format_range_to_parts!(number(), number(), Keyword.t()) ::
+          [%{type: atom(), value: String.t(), source: atom()}] | no_return()
+  def format_range_to_parts!(number_start, number_end, options \\ []) do
+    case format_range_to_parts(number_start, number_end, options) do
+      {:ok, parts} -> parts
+      {:error, exception} -> raise exception
+    end
+  end
+
+  @doc """
   Formats a number into a list of typed parts.
 
   Modelled on the JS `Intl.NumberFormat.formatToParts()`. Each part
@@ -301,10 +388,9 @@ defmodule Intl.NumberFormat do
   * `number` is an integer, float, or `Decimal`.
 
   * `options` is a keyword list of options. Accepts the same
-    options as `format/2` (except `:style` must be `:decimal`,
-    `:currency`, or `:percent`; `:unit` is not supported, and
-    `currency_display: :name` returns an error since the long
-    currency formats do not decompose into parts).
+    options as `format/2`, including `style: :unit` (the unit
+    text is a `:unit` part) and `currency_display: :name` (the
+    currency name is a `:currency` part).
 
   ### Returns
 
@@ -344,6 +430,9 @@ defmodule Intl.NumberFormat do
     {style, options} = Keyword.pop(options, :style, :decimal)
 
     case style do
+      :unit ->
+        unit_to_parts(number, options)
+
       style when style in [:decimal, :currency, :percent] ->
         with {:ok, localize_options} <- translate_options(style, options),
              {:ok, parts} <- Localize.Number.to_parts(number, localize_options) do
@@ -351,7 +440,7 @@ defmodule Intl.NumberFormat do
         end
 
       other ->
-        {:error, invalid_option_error(:style, other, [:decimal, :currency, :percent])}
+        {:error, invalid_option_error(:style, other, [:decimal, :currency, :percent, :unit])}
     end
   end
 
@@ -394,8 +483,43 @@ defmodule Intl.NumberFormat do
         Localize.Unit.to_string(unit, Keyword.put(options, :format, unit_display))
       end
     else
-      {:error, ArgumentError.exception("The :unit option is required when style is :unit")}
+      {:error, missing_unit_error()}
     end
+  end
+
+  defp unit_to_parts(number, options) do
+    {unit_name, options} = Keyword.pop(options, :unit)
+    {unit_display, options} = Keyword.pop(options, :unit_display, :short)
+
+    if unit_name do
+      with {:ok, unit} <- Localize.Unit.new(number, unit_name) do
+        Localize.Unit.to_parts(unit, Keyword.put(options, :format, unit_display))
+      end
+    else
+      {:error, missing_unit_error()}
+    end
+  end
+
+  defp unit_range(number_start, number_end, options) do
+    {unit_name, options} = Keyword.pop(options, :unit)
+    {unit_display, options} = Keyword.pop(options, :unit_display, :short)
+
+    if unit_name do
+      with {:ok, unit_start} <- Localize.Unit.new(number_start, unit_name),
+           {:ok, unit_end} <- Localize.Unit.new(number_end, unit_name) do
+        Localize.Unit.to_range_string(
+          unit_start,
+          unit_end,
+          Keyword.put(options, :format, unit_display)
+        )
+      end
+    else
+      {:error, missing_unit_error()}
+    end
+  end
+
+  defp missing_unit_error do
+    ArgumentError.exception("The :unit option is required when style is :unit")
   end
 
   defp translate_options(style, options) do

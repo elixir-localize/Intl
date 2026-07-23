@@ -4,17 +4,13 @@ Remaining conformance gaps against the JS Intl API, tracked in the [compatibilit
 
 ## Blocked on Localize
 
-* `formatToParts` beyond NumberFormat — needs Localize parts support for dates/times, lists, and units (`Localize.Number.to_parts/2` landed in 1.0.0-rc.1; siblings pending).
+* `Intl.DateTimeFormat.formatRangeToParts` — needs parts support in `Localize.Interval` formatting.
 
-* `formatRangeToParts` — needs `Localize.Number.to_range_parts/3` (listed as a post-1.0 candidate in Localize's TODO).
+* `Intl.NumberFormat.format_range_to_parts/3` with `style: :unit` — needs `Localize.Unit.to_range_parts/3`.
 
-* `format_to_parts/2` with `currency_display: :name` — needs parts support for the Localize `:currency_long` composed formats.
+* `Intl.DurationFormat` `formatToParts` — needs a parts variant of `Localize.Duration.to_string/2` (unit parts joined with list parts already exist upstream, so this is composition work).
 
-* `Intl.DateTimeFormat` `fractionalSecondDigits` — needs fractional-second (`S`) support in Localize skeleton matching; the Intl skeleton builder is ready.
-
-* `Intl.DurationFormat` per-unit style options (`hoursDisplay`, …) — needs per-unit control in `Localize.Duration.to_string/2`.
-
-* `Intl.Segmenter` `isWordLike` — needs word-classification metadata from the segmentation engine.
+* `Intl.Segmenter` `isWordLike` — needs word-classification metadata from the segmentation engine (the `unicode_string` package, not Localize).
 
 ## Intl-side (no upstream work required)
 
@@ -24,7 +20,11 @@ Remaining conformance gaps against the JS Intl API, tracked in the [compatibilit
 
 ## Completed
 
-### 1.0.0-rc.0 (July 23, 2026)
+### 1.0.0-rc.0 second pass (July 23, 2026)
+
+Closed with Localize 1.0.0-rc.2: `format_to_parts` for DateTimeFormat, ListFormat, and RelativeTimeFormat; NumberFormat `format_range_to_parts/3`, unit parts, unit ranges, and `currency_display: :name` parts; DateTimeFormat `fractional_second_digits`; DurationFormat per-unit style and display options; `PluralRules.select_range/3` now delegates to `Localize.Number.PluralRule.Range`.
+
+### 1.0.0-rc.0 first pass (July 23, 2026)
 
 Closed with Localize 1.0.0-rc.1: `minimum_integer_digits`, `trailing_zero_display`, `rounding_priority`, `format_to_parts/2` for numbers, `RelativeTimeFormat numeric: :always`, `supported_values_of` `:collation`/`:time_zone`, `supported_locales_of/1`, `PluralRules.select_range/3`, `Collator :usage`/`:collation`, and the DateTimeFormat `:era`/`:day_period`/`:time_zone_name`/`:hour12`/`:hour_cycle` components (plus the component-skeleton bug fix).
 

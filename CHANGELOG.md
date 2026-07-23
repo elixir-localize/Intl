@@ -8,7 +8,21 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 
 ### Added
 
-* `Intl.NumberFormat.format_to_parts/2` and `format_to_parts!/2` return typed parts per JS `formatToParts()`, for `:decimal`, `:currency`, and `:percent` styles.
+* `Intl.NumberFormat.format_to_parts/2` and `format_to_parts!/2` return typed parts per JS `formatToParts()`, for all styles including `:unit` and `currency_display: :name`.
+
+* `Intl.NumberFormat.format_range_to_parts/3` and `format_range_to_parts!/3` implement JS `formatRangeToParts()` with `:source` tagging (`:start_range`, `:end_range`, `:shared`).
+
+* `Intl.NumberFormat.format_range/3` supports `style: :unit`: the unit pattern is applied once to the range ("2–5 kilometers") with the TR35 plural-range category.
+
+* `Intl.DateTimeFormat.format_to_parts/2` and `format_to_parts!/2` implement JS `formatToParts()` across styles, component skeletons, and combined date+time wrappers.
+
+* `Intl.DateTimeFormat.format/2` supports the `:fractional_second_digits` component option (1–3 digits).
+
+* `Intl.ListFormat.format_to_parts/2` and `format_to_parts!/2` implement JS `formatToParts()` with `:element` and `:literal` parts.
+
+* `Intl.RelativeTimeFormat.format_to_parts/3` and `format_to_parts!/3` implement JS `formatToParts()`; the `:integer` part carries a `:unit` key.
+
+* `Intl.DurationFormat.format/2` supports the JS per-unit style options (`:hours`, `:minutes`, …) and per-unit display options (`:hours_display`, …, `:auto` or `:always`).
 
 * `Intl.NumberFormat.format/2` supports `:minimum_integer_digits`, `:trailing_zero_display` (`:strip_if_integer`), and `:rounding_priority` (`:more_precision`, `:less_precision`).
 
@@ -26,7 +40,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 
 ### Changed
 
-* Localize 1.0.0-rc.1 or later is required.
+* Localize 1.0.0-rc.2 or later is required.
 
 * `currency_display: :name` applies the currency's fraction digits ("1,234.50 US dollars", previously "1,234 US dollars"), matching JS.
 

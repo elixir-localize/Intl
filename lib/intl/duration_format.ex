@@ -16,6 +16,18 @@ defmodule Intl.DurationFormat do
 
   @duration_keys [:year, :month, :day, :hour, :minute, :second, :microsecond]
 
+  # JS per-unit option names mapped to the singular Localize unit
+  # atoms: {style_option, display_option, unit}.
+  @per_unit_options [
+    {:years, :years_display, :year},
+    {:months, :months_display, :month},
+    {:days, :days_display, :day},
+    {:hours, :hours_display, :hour},
+    {:minutes, :minutes_display, :minute},
+    {:seconds, :seconds_display, :second},
+    {:microseconds, :microseconds_display, :microsecond}
+  ]
+
   @doc """
   Formats a duration according to locale conventions.
 
@@ -37,6 +49,17 @@ defmodule Intl.DurationFormat do
   * `:style` is `:long`, `:short`, or `:narrow`. The default
     is `:long`.
 
+  * Per-unit style options — `:years`, `:months`, `:days`,
+    `:hours`, `:minutes`, `:seconds`, `:microseconds` — each
+    accept `:long`, `:short`, or `:narrow`, overriding `:style`
+    for that unit (JS `hours: "narrow"`).
+
+  * Per-unit display options — `:years_display`,
+    `:months_display`, `:days_display`, `:hours_display`,
+    `:minutes_display`, `:seconds_display`,
+    `:microseconds_display` — each accept `:auto` (omit when
+    zero, the default) or `:always` (JS `hoursDisplay`).
+
   ### Returns
 
   * `{:ok, formatted_string}` on success.
@@ -52,18 +75,24 @@ defmodule Intl.DurationFormat do
       iex> Intl.DurationFormat.format(%{hours: 2, minutes: 30}, locale: :en)
       {:ok, "2 hours and 30 minutes"}
 
+      iex> Intl.DurationFormat.format(%{hours: 2}, locale: :en, minutes_display: :always)
+      {:ok, "2 hours and 0 minutes"}
+
+      iex> Intl.DurationFormat.format(%{hours: 2, minutes: 30}, locale: :en, hours: :narrow)
+      {:ok, "2h and 30 minutes"}
+
   """
   @spec format(Localize.Duration.t() | map(), Keyword.t()) ::
           {:ok, String.t()} | {:error, term()}
   def format(duration_or_map, options \\ [])
 
   def format(%Localize.Duration{} = duration, options) do
-    Localize.Duration.to_string(duration, translate_style(options))
+    Localize.Duration.to_string(duration, translate_options(options))
   end
 
   def format(map, options) when is_map(map) do
     duration = to_duration_struct(map)
-    Localize.Duration.to_string(duration, translate_style(options))
+    Localize.Duration.to_string(duration, translate_options(options))
   end
 
   @doc """
@@ -96,13 +125,41 @@ defmodule Intl.DurationFormat do
   end
 
   # The JS-compatible :style option maps to Localize's :format
-  # option (Localize deprecated :format's old name :style in 0.43).
+  # option (Localize deprecated :format's old name :style in 0.43),
+  # and the JS per-unit style/display options map to Localize's
+  # :styles and :display keyword lists.
+  defp translate_options(options) do
+    options
+    |> translate_style()
+    |> translate_per_unit_options()
+  end
+
   defp translate_style(options) do
     case Keyword.pop(options, :style) do
       {nil, options} -> options
       {style, options} -> Keyword.put_new(options, :format, style)
     end
   end
+
+  defp translate_per_unit_options(options) do
+    {options, styles, display} =
+      Enum.reduce(@per_unit_options, {options, [], []}, fn
+        {style_key, display_key, unit}, {options, styles, display} ->
+          {style_value, options} = Keyword.pop(options, style_key)
+          {display_value, options} = Keyword.pop(options, display_key)
+
+          styles = if style_value, do: [{unit, style_value} | styles], else: styles
+          display = if display_value, do: [{unit, display_value} | display], else: display
+          {options, styles, display}
+      end)
+
+    options
+    |> put_unless_empty(:styles, Enum.reverse(styles))
+    |> put_unless_empty(:display, Enum.reverse(display))
+  end
+
+  defp put_unless_empty(options, _key, []), do: options
+  defp put_unless_empty(options, key, value), do: Keyword.put_new(options, key, value)
 
   defp to_duration_struct(map) do
     normalized =

@@ -23,9 +23,9 @@ Return values use Elixir's `{:ok, result}` / `{:error, reason}` convention. Bang
 | JS Method | Elixir Function | Status |
 |---|---|---|
 | `format()` | `Intl.NumberFormat.format/2` | Compatible |
-| `formatRange()` | `Intl.NumberFormat.format_range/3` | Compatible — supports `:decimal`, `:currency`, and `:percent` styles. `:unit` ranges are not supported. |
-| `formatToParts()` | `Intl.NumberFormat.format_to_parts/2` | Compatible for `:decimal`, `:currency`, and `:percent` styles. Part types are snake_case atoms (`:minus_sign` rather than `"minusSign"`). `:unit` style and `currency_display: :name` are not supported. |
-| `formatRangeToParts()` | — | Not supported |
+| `formatRange()` | `Intl.NumberFormat.format_range/3` | Compatible — supports all styles. Unit ranges apply the unit pattern once ("2–5 kilometers") with the TR35 plural-range category. |
+| `formatToParts()` | `Intl.NumberFormat.format_to_parts/2` | Compatible for all styles. Part types are snake_case atoms (`:minus_sign` rather than `"minusSign"`); unit text is a `:unit` part and the `currency_display: :name` currency name is a `:currency` part. |
+| `formatRangeToParts()` | `Intl.NumberFormat.format_range_to_parts/3` | Compatible for `:decimal`, `:currency`, and `:percent` styles; parts carry a `:source` key (`:start_range`, `:end_range`, `:shared`). `:unit` range parts are not supported. |
 | `resolvedOptions()` | — | Not supported |
 | `supportedLocalesOf()` | — | Use `Intl.supported_locales_of/1` |
 
@@ -64,8 +64,8 @@ Compact notation applies the ECMA-402 default precision of at most two significa
 |---|---|---|
 | `format()` | `Intl.DateTimeFormat.format/2` | Compatible |
 | `formatRange()` | `Intl.DateTimeFormat.format_range/3` | Compatible |
-| `formatToParts()` | — | Not supported |
-| `formatRangeToParts()` | — | Not supported |
+| `formatToParts()` | `Intl.DateTimeFormat.format_to_parts/2` | Compatible — decomposes styles, component skeletons, and combined date+time wrappers into typed field parts. |
+| `formatRangeToParts()` | — | Not supported (Localize interval formatting does not yet expose parts) |
 | `resolvedOptions()` | — | Not supported |
 | `supportedLocalesOf()` | — | Use `Intl.supported_locales_of/1` |
 
@@ -89,7 +89,7 @@ Compact notation applies the ECMA-402 default precision of at most two significa
 | `timeZoneName` | `:time_zone_name` | `:short`, `:long`, `:short_offset`, `:long_offset`, `:short_generic`, `:long_generic` |
 | `numberingSystem` | — | Use a `-u-nu-` locale extension (for example, `locale: "en-u-nu-thai"`) |
 | `era` | `:era` | `:long`, `:short`, `:narrow` |
-| `fractionalSecondDigits` | — | Not supported (pending fractional-second skeleton support in Localize) |
+| `fractionalSecondDigits` | `:fractional_second_digits` | `1`, `2`, or `3` fractional-second digits, separated by the locale decimal separator |
 | `dayPeriod` | `:day_period` | `:long`, `:short`, `:narrow` — flexible day periods ("in the morning") |
 
 ### DateTimeFormat Input Types
@@ -101,7 +101,7 @@ The JS API accepts `Date` objects. This library accepts Elixir `Date`, `Time`, `
 | JS Method | Elixir Function | Status |
 |---|---|---|
 | `format()` | `Intl.ListFormat.format/2` | Compatible |
-| `formatToParts()` | — | Not supported |
+| `formatToParts()` | `Intl.ListFormat.format_to_parts/2` | Compatible — `:element` and `:literal` parts |
 | `resolvedOptions()` | — | Not supported |
 | `supportedLocalesOf()` | — | Use `Intl.supported_locales_of/1` |
 
@@ -138,7 +138,7 @@ The combination of `type` and `style` is mapped to a Localize list format atom (
 | JS Method | Elixir Function | Status |
 |---|---|---|
 | `format()` | `Intl.RelativeTimeFormat.format/3` | Compatible |
-| `formatToParts()` | — | Not supported |
+| `formatToParts()` | `Intl.RelativeTimeFormat.format_to_parts/3` | Compatible — the `:integer` part carries a `:unit` key |
 | `resolvedOptions()` | — | Not supported |
 | `supportedLocalesOf()` | — | Use `Intl.supported_locales_of/1` |
 
@@ -211,7 +211,8 @@ The JS API accepts a plain object with `years`, `months`, `days`, `hours`, `minu
 | JS Option | Elixir Option | Notes |
 |---|---|---|
 | `style` | `:style` | `:long`, `:short`, `:narrow` |
-| Per-unit style options (`hoursDisplay`, etc.) | — | Not supported |
+| Per-unit styles (`hours`, `minutes`, …) | `:hours`, `:minutes`, … | `:long`, `:short`, or `:narrow` per unit |
+| Per-unit display (`hoursDisplay`, etc.) | `:hours_display`, … | `:auto` or `:always` per unit |
 
 ## Intl.Segmenter
 
@@ -239,7 +240,7 @@ The JS API accepts a plain object with `years`, `months`, `days`, `hours`, `minu
 
 ## Features Not Supported Across All Modules
 
-* **`formatToParts`** — Available for `Intl.NumberFormat` (`format_to_parts/2`). The other modules do not yet expose structured format parts.
+* **`formatToParts`** — Available for `Intl.NumberFormat`, `Intl.DateTimeFormat`, `Intl.ListFormat`, and `Intl.RelativeTimeFormat`. `Intl.DurationFormat` and `Intl.Segmenter` have no parts API (the JS `Segmenter` has none either).
 
 * **`resolvedOptions`** — Not implemented. In the JS API this returns the effective options after locale negotiation and default resolution. Could be added in a future version.
 

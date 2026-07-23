@@ -289,18 +289,68 @@ defmodule Intl.NumberFormatTest do
               ]} = Intl.NumberFormat.format_to_parts(1234, locale: :en, notation: :compact)
     end
 
-    test "unit style returns error" do
-      assert {:error, %ArgumentError{}} =
-               Intl.NumberFormat.format_to_parts(1, locale: :en, style: :unit, unit: "meter")
+    test "unit style decomposes with a :unit part" do
+      assert {:ok,
+              [
+                %{type: :integer, value: "1"},
+                %{type: :literal, value: " "},
+                %{type: :unit, value: "m"}
+              ]} = Intl.NumberFormat.format_to_parts(1, locale: :en, style: :unit, unit: "meter")
+
+      assert {:ok,
+              [
+                %{type: :integer, value: "42"},
+                %{type: :literal, value: " "},
+                %{type: :unit, value: "meters"}
+              ]} =
+               Intl.NumberFormat.format_to_parts(42,
+                 locale: :en,
+                 style: :unit,
+                 unit: "meter",
+                 unit_display: :long
+               )
     end
 
-    test "currency display name returns error" do
-      assert {:error, %Localize.InvalidValueError{}} =
+    test "currency display name decomposes with a :currency name part" do
+      assert {:ok, parts} =
                Intl.NumberFormat.format_to_parts(1,
                  locale: :en,
                  style: :currency,
                  currency: :USD,
                  currency_display: :name
+               )
+
+      assert %{type: :currency, value: "US dollars"} in parts
+    end
+  end
+
+  describe "format_range_to_parts/3" do
+    test "range parts carry sources" do
+      assert {:ok,
+              [
+                %{type: :integer, value: "3", source: :start_range},
+                %{type: :literal, value: "–", source: :shared},
+                %{type: :integer, value: "5", source: :end_range}
+              ]} = Intl.NumberFormat.format_range_to_parts(3, 5, locale: :en)
+    end
+
+    test "currency range parts concatenate to the range string" do
+      options = [locale: :en, style: :currency, currency: :USD]
+      {:ok, parts} = Intl.NumberFormat.format_range_to_parts(100, 200, options)
+      {:ok, string} = Intl.NumberFormat.format_range(100, 200, options)
+
+      assert Enum.map_join(parts, & &1.value) == string
+    end
+  end
+
+  describe "format_range/3 unit style" do
+    test "the unit pattern applies once to the range" do
+      assert {:ok, "2–5 kilometers"} =
+               Intl.NumberFormat.format_range(2, 5,
+                 locale: :en,
+                 style: :unit,
+                 unit: "kilometer",
+                 unit_display: :long
                )
     end
   end
