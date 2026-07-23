@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* `Intl.supported_values_of(:collation)` excludes `"standard"` and `"search"` from the returned collation values, per ECMA-402 `supportedValuesOf`.
+
 ## [1.0.0-rc.0] - 2026-07-23
 
 ### Added

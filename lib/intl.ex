@@ -211,7 +211,11 @@ defmodule Intl do
   end
 
   def supported_values_of(:collation) do
-    {:ok, Localize.known_collations()}
+    # ECMA-402 `supportedValuesOf("collation")` excludes "standard"
+    # and "search" from the CLDR inventory (they are selected through
+    # the collator's `usage` and default behavior, not as collation
+    # values).
+    {:ok, Enum.reject(Localize.known_collations(), &(&1 in ["standard", "search"]))}
   end
 
   def supported_values_of(:time_zone) do
