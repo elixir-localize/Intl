@@ -52,4 +52,27 @@ defmodule Intl.DurationFormatTest do
                Intl.DurationFormat.format(%{hours: 2}, locale: :en, hours_display: :sometimes)
     end
   end
+
+  describe "format_to_parts/2" do
+    test "numeric parts carry their unit" do
+      assert {:ok,
+              [
+                %{type: :integer, value: "2", unit: :hour},
+                %{type: :literal, value: " "},
+                %{type: :unit, value: "hours"},
+                %{type: :literal, value: " and "},
+                %{type: :integer, value: "30", unit: :minute},
+                %{type: :literal, value: " "},
+                %{type: :unit, value: "minutes"}
+              ]} = Intl.DurationFormat.format_to_parts(%{hours: 2, minutes: 30}, locale: :en)
+    end
+
+    test "parts concatenate to the formatted string with per-unit options" do
+      options = [locale: :en, minutes_display: :always, hours: :narrow]
+      {:ok, parts} = Intl.DurationFormat.format_to_parts(%{hours: 2}, options)
+      {:ok, string} = Intl.DurationFormat.format(%{hours: 2}, options)
+
+      assert Enum.map_join(parts, & &1.value) == string
+    end
+  end
 end

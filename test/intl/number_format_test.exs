@@ -334,6 +334,23 @@ defmodule Intl.NumberFormatTest do
               ]} = Intl.NumberFormat.format_range_to_parts(3, 5, locale: :en)
     end
 
+    test "unit range parts tag the unit as shared" do
+      assert {:ok,
+              [
+                %{type: :integer, value: "2", source: :start_range},
+                %{type: :literal, value: "–", source: :shared},
+                %{type: :integer, value: "5", source: :end_range},
+                %{type: :literal, value: " ", source: :shared},
+                %{type: :unit, value: "kilometers", source: :shared}
+              ]} =
+               Intl.NumberFormat.format_range_to_parts(2, 5,
+                 locale: :en,
+                 style: :unit,
+                 unit: "kilometer",
+                 unit_display: :long
+               )
+    end
+
     test "currency range parts concatenate to the range string" do
       options = [locale: :en, style: :currency, currency: :USD]
       {:ok, parts} = Intl.NumberFormat.format_range_to_parts(100, 200, options)

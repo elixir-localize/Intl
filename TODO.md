@@ -2,15 +2,9 @@
 
 Remaining conformance gaps against the JS Intl API, tracked in the [compatibility guide](https://hexdocs.pm/intl/compatibility.html). Split by whether the work is blocked on Localize.
 
-## Blocked on Localize
+## Blocked upstream
 
-* `Intl.DateTimeFormat.formatRangeToParts` — needs parts support in `Localize.Interval` formatting.
-
-* `Intl.NumberFormat.format_range_to_parts/3` with `style: :unit` — needs `Localize.Unit.to_range_parts/3`.
-
-* `Intl.DurationFormat` `formatToParts` — needs a parts variant of `Localize.Duration.to_string/2` (unit parts joined with list parts already exist upstream, so this is composition work).
-
-* `Intl.Segmenter` `isWordLike` — needs word-classification metadata from the segmentation engine (the `unicode_string` package, not Localize).
+Nothing — every upstream-blocked conformance gap is closed.
 
 ## Intl-side (no upstream work required)
 
@@ -19,6 +13,14 @@ Remaining conformance gaps against the JS Intl API, tracked in the [compatibilit
 * `localeMatcher` — deliberately not supported; Localize's own locale resolution applies.
 
 ## Completed
+
+### 1.0.0-rc.0 fourth pass (July 23, 2026)
+
+Closed with `unicode_string` 2.3.0: `Intl.Segmenter.segment_with_metadata/2` provides the JS segment-object shape with `:word_like?` (`isWordLike`) via the new `Unicode.String.word_like?/1`.
+
+### 1.0.0-rc.0 third pass (July 23, 2026)
+
+Closed with post-rc.2 Localize work: `DateTimeFormat.format_range_to_parts/3` (interval parts), `NumberFormat.format_range_to_parts/3` for `style: :unit`, `DurationFormat.format_to_parts/2`, and the `:numbering_system` option for date/time formatting. Every JS `formatToParts`/`formatRangeToParts` surface is now implemented.
 
 ### 1.0.0-rc.0 second pass (July 23, 2026)
 

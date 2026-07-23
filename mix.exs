@@ -98,8 +98,8 @@ defmodule Intl.MixProject do
 
   defp deps do
     [
-      {:localize, "~> 1.0-rc.2"},
-      {:unicode_string, "~> 1.8", optional: true},
+      {:localize, "~> 1.0-rc.3"},
+      {:unicode_string, "~> 2.3", optional: true},
       {:ex_doc, "~> 0.34", only: [:dev, :release], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ] ++ maybe_json_polyfill()

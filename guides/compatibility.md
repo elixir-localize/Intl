@@ -25,7 +25,7 @@ Return values use Elixir's `{:ok, result}` / `{:error, reason}` convention. Bang
 | `format()` | `Intl.NumberFormat.format/2` | Compatible |
 | `formatRange()` | `Intl.NumberFormat.format_range/3` | Compatible — supports all styles. Unit ranges apply the unit pattern once ("2–5 kilometers") with the TR35 plural-range category. |
 | `formatToParts()` | `Intl.NumberFormat.format_to_parts/2` | Compatible for all styles. Part types are snake_case atoms (`:minus_sign` rather than `"minusSign"`); unit text is a `:unit` part and the `currency_display: :name` currency name is a `:currency` part. |
-| `formatRangeToParts()` | `Intl.NumberFormat.format_range_to_parts/3` | Compatible for `:decimal`, `:currency`, and `:percent` styles; parts carry a `:source` key (`:start_range`, `:end_range`, `:shared`). `:unit` range parts are not supported. |
+| `formatRangeToParts()` | `Intl.NumberFormat.format_range_to_parts/3` | Compatible for all styles; parts carry a `:source` key (`:start_range`, `:end_range`, `:shared`). |
 | `resolvedOptions()` | — | Not supported |
 | `supportedLocalesOf()` | — | Use `Intl.supported_locales_of/1` |
 
@@ -65,7 +65,7 @@ Compact notation applies the ECMA-402 default precision of at most two significa
 | `format()` | `Intl.DateTimeFormat.format/2` | Compatible |
 | `formatRange()` | `Intl.DateTimeFormat.format_range/3` | Compatible |
 | `formatToParts()` | `Intl.DateTimeFormat.format_to_parts/2` | Compatible — decomposes styles, component skeletons, and combined date+time wrappers into typed field parts. |
-| `formatRangeToParts()` | — | Not supported (Localize interval formatting does not yet expose parts) |
+| `formatRangeToParts()` | `Intl.DateTimeFormat.format_range_to_parts/3` | Compatible — parts carry a `:source` key; equal endpoints collapse to a single `:shared` value. |
 | `resolvedOptions()` | — | Not supported |
 | `supportedLocalesOf()` | — | Use `Intl.supported_locales_of/1` |
 
@@ -87,7 +87,7 @@ Compact notation applies the ECMA-402 default precision of at most two significa
 | `hour12` | `:hour12` | Boolean; selects the 12- or 24-hour symbol for the `:hour` component |
 | `hourCycle` | `:hour_cycle` | `:h11`, `:h12`, `:h23`, `:h24`. Takes precedence over `:hour12`. |
 | `timeZoneName` | `:time_zone_name` | `:short`, `:long`, `:short_offset`, `:long_offset`, `:short_generic`, `:long_generic` |
-| `numberingSystem` | — | Use a `-u-nu-` locale extension (for example, `locale: "en-u-nu-thai"`) |
+| `numberingSystem` | `:numbering_system` | Any CLDR numbering system renders all numeric fields; a `-u-nu-` locale extension also works |
 | `era` | `:era` | `:long`, `:short`, `:narrow` |
 | `fractionalSecondDigits` | `:fractional_second_digits` | `1`, `2`, or `3` fractional-second digits, separated by the locale decimal separator |
 | `dayPeriod` | `:day_period` | `:long`, `:short`, `:narrow` — flexible day periods ("in the morning") |
@@ -198,7 +198,7 @@ An additional `sort/2` convenience function is provided that is not present in t
 | JS Method | Elixir Function | Status |
 |---|---|---|
 | `format()` | `Intl.DurationFormat.format/2` | Compatible |
-| `formatToParts()` | — | Not supported |
+| `formatToParts()` | `Intl.DurationFormat.format_to_parts/2` | Compatible — numeric parts carry a `:unit` key |
 | `resolvedOptions()` | — | Not supported |
 | `supportedLocalesOf()` | — | Use `Intl.supported_locales_of/1` |
 
@@ -232,15 +232,15 @@ The JS API accepts a plain object with `years`, `months`, `days`, `hours`, `minu
 
 ### Segmenter Differences
 
-* The JS API returns an iterable of `{segment, index, input, isWordLike}` objects. This library returns `{:ok, [String.t()]}` — a flat list of segment strings.
+* `Intl.Segmenter.segment/2` returns `{:ok, [String.t()]}` — a flat list of segment strings. `Intl.Segmenter.segment_with_metadata/2` mirrors the JS segment objects, returning `%{segment: text, index: offset, word_like?: boolean | nil}` maps.
 
-* The `isWordLike` property from JS word segmentation is not replicated.
+* `:word_like?` mirrors the JS `isWordLike`: a boolean for `:word` granularity and `nil` otherwise. `:index` is the byte offset of the segment in the input, where JS uses UTF-16 code-unit indexes.
 
-* The `:word` and `:sentence` granularity require the optional `unicode_string` (~> 1.8) dependency. If not installed, these return `{:error, reason}`.
+* The `:word` and `:sentence` granularity require the optional `unicode_string` (~> 2.3) dependency. If not installed, these return `{:error, reason}`.
 
 ## Features Not Supported Across All Modules
 
-* **`formatToParts`** — Available for `Intl.NumberFormat`, `Intl.DateTimeFormat`, `Intl.ListFormat`, and `Intl.RelativeTimeFormat`. `Intl.DurationFormat` and `Intl.Segmenter` have no parts API (the JS `Segmenter` has none either).
+* **`formatToParts`** — Available in every module that has it in JS: `Intl.NumberFormat`, `Intl.DateTimeFormat`, `Intl.ListFormat`, `Intl.RelativeTimeFormat`, and `Intl.DurationFormat`. `formatRangeToParts` is likewise available for numbers and dates/times.
 
 * **`resolvedOptions`** — Not implemented. In the JS API this returns the effective options after locale negotiation and default resolution. Could be added in a future version.
 

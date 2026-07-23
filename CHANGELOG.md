@@ -16,6 +16,16 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 
 * `Intl.DateTimeFormat.format_to_parts/2` and `format_to_parts!/2` implement JS `formatToParts()` across styles, component skeletons, and combined date+time wrappers.
 
+* `Intl.DateTimeFormat.format_range_to_parts/3` and `format_range_to_parts!/3` implement JS `formatRangeToParts()` with `:source` tagging.
+
+* `Intl.DateTimeFormat.format/2` supports the `:numbering_system` option: any CLDR numbering system renders all numeric fields.
+
+* `Intl.DurationFormat.format_to_parts/2` and `format_to_parts!/2` implement JS `formatToParts()`; numeric parts carry a `:unit` key.
+
+* `Intl.NumberFormat.format_range_to_parts/3` supports `style: :unit`, completing range parts for all styles.
+
+* `Intl.Segmenter.segment_with_metadata/2` and `segment_with_metadata!/2` mirror the JS segment objects: `:segment`, `:index` (byte offset), and `:word_like?` (the JS `isWordLike`, via `Unicode.String.word_like?/1`).
+
 * `Intl.DateTimeFormat.format/2` supports the `:fractional_second_digits` component option (1–3 digits).
 
 * `Intl.ListFormat.format_to_parts/2` and `format_to_parts!/2` implement JS `formatToParts()` with `:element` and `:literal` parts.
@@ -40,7 +50,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 
 ### Changed
 
-* Localize 1.0.0-rc.2 or later is required.
+* Localize 1.0.0-rc.3 or later is required.
 
 * `currency_display: :name` applies the currency's fraction digits ("1,234.50 US dollars", previously "1,234 US dollars"), matching JS.
 

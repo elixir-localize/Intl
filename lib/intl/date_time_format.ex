@@ -106,6 +106,9 @@ defmodule Intl.DateTimeFormat do
   * `:hour_cycle` is `:h11`, `:h12`, `:h23`, or `:h24`. Takes
     precedence over `:hour12`.
 
+  * `:numbering_system` is a CLDR numbering system name (for
+    example, `:thai`). All numeric fields render in that system.
+
   * `:time_zone` is a time zone identifier string (for example,
     `"America/New_York"`).
 
@@ -298,6 +301,84 @@ defmodule Intl.DateTimeFormat do
   end
 
   @doc """
+  Formats a date/time range into a list of typed parts.
+
+  Modelled on the JS `Intl.DateTimeFormat.formatRangeToParts()`. In
+  addition to `:type` and `:value`, each part carries a `:source`
+  key: `:start_range`, `:end_range`, or `:shared`. When the range
+  endpoints have no practical difference, the single formatted value
+  carries source `:shared` throughout, matching JS.
+
+  ### Arguments
+
+  * `from` is the start date, time, or datetime.
+
+  * `to` is the end date, time, or datetime.
+
+  * `options` is a keyword list of options. Accepts the same
+    options as `format_range/3`.
+
+  ### Returns
+
+  * `{:ok, parts}` where `parts` is a list of
+    `%{type: atom, value: String.t(), source: atom}` maps.
+
+  * `{:error, reason}` if the values or options are invalid.
+
+  ### Examples
+
+      iex> Intl.DateTimeFormat.format_range_to_parts(~D[2022-04-22], ~D[2022-04-25], locale: :en)
+      {:ok, [
+        %{type: :month, value: "Apr", source: :start_range},
+        %{type: :literal, value: " ", source: :start_range},
+        %{type: :day, value: "22", source: :start_range},
+        %{type: :literal, value: " – ", source: :shared},
+        %{type: :day, value: "25", source: :end_range},
+        %{type: :literal, value: ", ", source: :end_range},
+        %{type: :year, value: "2022", source: :end_range}
+      ]}
+
+  """
+  @spec format_range_to_parts(map(), map(), Keyword.t()) ::
+          {:ok, [%{type: atom(), value: String.t(), source: atom()}]} | {:error, term()}
+  def format_range_to_parts(from, to, options \\ []) do
+    localize_options = translate_options(options)
+    Localize.Interval.to_parts(from, to, localize_options)
+  end
+
+  @doc """
+  Formats a date/time range into typed parts, raising on error.
+
+  Same as `format_range_to_parts/3` but returns the parts directly or raises.
+
+  ### Arguments
+
+  * `from` is the start date, time, or datetime.
+
+  * `to` is the end date, time, or datetime.
+
+  * `options` is a keyword list of options.
+
+  ### Returns
+
+  * A list of `%{type: atom, value: String.t(), source: atom}` maps.
+
+  ### Examples
+
+      iex> Intl.DateTimeFormat.format_range_to_parts!(~D[2022-04-22], ~D[2022-04-25], locale: :en) |> length()
+      7
+
+  """
+  @spec format_range_to_parts!(map(), map(), Keyword.t()) ::
+          [%{type: atom(), value: String.t(), source: atom()}] | no_return()
+  def format_range_to_parts!(from, to, options \\ []) do
+    case format_range_to_parts(from, to, options) do
+      {:ok, parts} -> parts
+      {:error, exception} -> raise exception
+    end
+  end
+
+  @doc """
   Formats a date/time range, raising on error.
 
   Same as `format_range/3` but returns the string directly or raises.
@@ -329,6 +410,8 @@ defmodule Intl.DateTimeFormat do
   end
 
   defp translate_options(options) do
+    options = translate_numbering_system(options)
+
     cond do
       Keyword.has_key?(options, :date_style) or Keyword.has_key?(options, :time_style) ->
         translate_style_options(options)
@@ -338,6 +421,15 @@ defmodule Intl.DateTimeFormat do
 
       true ->
         options
+    end
+  end
+
+  # The JS-compatible :numbering_system option maps to Localize's
+  # :number_system option.
+  defp translate_numbering_system(options) do
+    case Keyword.pop(options, :numbering_system) do
+      {nil, options} -> options
+      {system, options} -> Keyword.put_new(options, :number_system, system)
     end
   end
 

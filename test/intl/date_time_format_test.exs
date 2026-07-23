@@ -154,4 +154,55 @@ defmodule Intl.DateTimeFormatTest do
                Intl.DateTimeFormat.format_range(~D[2017-07-10], ~D[2017-07-15], locale: :en)
     end
   end
+
+  describe "format_range_to_parts/3" do
+    test "range parts carry sources with a shared separator" do
+      {:ok, parts} =
+        Intl.DateTimeFormat.format_range_to_parts(~D[2022-04-22], ~D[2022-04-25], locale: :en)
+
+      assert %{type: :day, value: "22", source: :start_range} in parts
+      assert %{type: :day, value: "25", source: :end_range} in parts
+      assert Enum.any?(parts, &(&1.type == :literal and &1.source == :shared))
+    end
+
+    test "parts concatenate to the range string" do
+      {:ok, parts} =
+        Intl.DateTimeFormat.format_range_to_parts(
+          ~N[2026-04-08 12:00:00],
+          ~N[2026-04-08 14:00:00],
+          locale: :en
+        )
+
+      {:ok, string} =
+        Intl.DateTimeFormat.format_range(
+          ~N[2026-04-08 12:00:00],
+          ~N[2026-04-08 14:00:00],
+          locale: :en
+        )
+
+      assert Enum.map_join(parts, & &1.value) == string
+    end
+  end
+
+  describe "format/2 numbering system" do
+    test "numbering_system renders all numeric fields" do
+      assert {:ok, "Mar ๑๕, ๒๐๒๕"} =
+               Intl.DateTimeFormat.format(~D[2025-03-15],
+                 locale: :en,
+                 year: :numeric,
+                 month: :short,
+                 day: :numeric,
+                 numbering_system: :thai
+               )
+    end
+
+    test "invalid numbering system returns an error" do
+      assert {:error, %Localize.UnknownNumberSystemError{}} =
+               Intl.DateTimeFormat.format(~D[2025-03-15],
+                 locale: :en,
+                 date_style: :medium,
+                 numbering_system: :bogus
+               )
+    end
+  end
 end

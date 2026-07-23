@@ -96,6 +96,88 @@ defmodule Intl.DurationFormat do
   end
 
   @doc """
+  Formats a duration into a list of typed parts.
+
+  Modelled on the JS `Intl.DurationFormat.formatToParts()`. Each
+  duration field contributes its unit parts, with the numeric
+  segments carrying a `:unit` key naming the field; the separators
+  between fields are `:literal` parts.
+
+  ### Arguments
+
+  * `duration` is a `Localize.Duration` struct or a map with
+    duration component keys.
+
+  * `options` is a keyword list of options. Accepts the same
+    options as `format/2`, including the per-unit style and
+    display options.
+
+  ### Returns
+
+  * `{:ok, parts}` where `parts` is a list of
+    `%{type: atom, value: String.t()}` maps; numeric parts also
+    carry a `:unit` key.
+
+  * `{:error, reason}` if the duration or options are invalid.
+
+  ### Examples
+
+      iex> Intl.DurationFormat.format_to_parts(%{hours: 2, minutes: 30}, locale: :en)
+      {:ok, [
+        %{type: :integer, value: "2", unit: :hour},
+        %{type: :literal, value: " "},
+        %{type: :unit, value: "hours"},
+        %{type: :literal, value: " and "},
+        %{type: :integer, value: "30", unit: :minute},
+        %{type: :literal, value: " "},
+        %{type: :unit, value: "minutes"}
+      ]}
+
+  """
+  @spec format_to_parts(Localize.Duration.t() | map(), Keyword.t()) ::
+          {:ok, [%{type: atom(), value: String.t()}]} | {:error, term()}
+  def format_to_parts(duration_or_map, options \\ [])
+
+  def format_to_parts(%Localize.Duration{} = duration, options) do
+    Localize.Duration.to_parts(duration, translate_options(options))
+  end
+
+  def format_to_parts(map, options) when is_map(map) do
+    duration = to_duration_struct(map)
+    Localize.Duration.to_parts(duration, translate_options(options))
+  end
+
+  @doc """
+  Formats a duration into typed parts, raising on error.
+
+  Same as `format_to_parts/2` but returns the parts directly or raises.
+
+  ### Arguments
+
+  * `duration` is a `Localize.Duration` struct or a map.
+
+  * `options` is a keyword list of options.
+
+  ### Returns
+
+  * A list of `%{type: atom, value: String.t()}` maps.
+
+  ### Examples
+
+      iex> Intl.DurationFormat.format_to_parts!(%{hours: 2}, locale: :en) |> length()
+      3
+
+  """
+  @spec format_to_parts!(Localize.Duration.t() | map(), Keyword.t()) ::
+          [%{type: atom(), value: String.t()}] | no_return()
+  def format_to_parts!(duration, options \\ []) do
+    case format_to_parts(duration, options) do
+      {:ok, parts} -> parts
+      {:error, exception} -> raise exception
+    end
+  end
+
+  @doc """
   Formats a duration, raising on error.
 
   Same as `format/2` but returns the string directly or raises.
