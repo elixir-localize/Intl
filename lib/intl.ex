@@ -173,10 +173,20 @@ defmodule Intl do
 
   ### Returns
 
-  * `{:ok, list}` where `list` is a list of supported value atoms
-    or strings.
+  * `{:ok, list}` where `list` is a sorted list of supported value
+    atoms or strings.
 
   * `{:error, reason}` if the key is not recognized.
+
+  ### Notes
+
+  `:unit` returns the simple CLDR unit names known to `Localize.Unit`,
+  sorted. Every returned name is usable as `Intl.NumberFormat`'s
+  `:unit` option. The list diverges from ECMA-402's sanctioned unit
+  identifiers in both directions: it carries units JS omits (such as
+  `"parsec"`), and it lists only base names, so SI-prefixed and
+  compound forms — `"kilometer"`, `"gigabyte"`, `"meter-per-second"` —
+  are accepted by `Intl.NumberFormat.format/2` without appearing here.
 
   ### Examples
 
@@ -194,6 +204,10 @@ defmodule Intl do
 
       iex> {:ok, time_zones} = Intl.supported_values_of(:time_zone)
       iex> "Europe/Paris" in time_zones
+      true
+
+      iex> {:ok, units} = Intl.supported_values_of(:unit)
+      iex> "meter" in units
       true
 
   """
@@ -231,7 +245,14 @@ defmodule Intl do
   end
 
   def supported_values_of(:unit) do
-    {:ok, Localize.Unit.known_units_by_category()}
+    units =
+      Localize.Unit.known_units_by_category()
+      |> Map.values()
+      |> Enum.concat()
+      |> Enum.uniq()
+      |> Enum.sort()
+
+    {:ok, units}
   end
 
   def supported_values_of(key) do

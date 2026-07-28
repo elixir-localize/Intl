@@ -83,7 +83,7 @@ defmodule Intl.DisplayNames do
         Localize.Calendar.display_name(:calendar, code, options)
 
       :date_time_field ->
-        Localize.Calendar.display_name(:date_time_field, code, options)
+        Localize.Calendar.display_name(:date_time_field, date_time_field(code), options)
 
       nil ->
         {:error, ArgumentError.exception("The :type option is required")}
@@ -125,4 +125,13 @@ defmodule Intl.DisplayNames do
       {:error, exception} -> raise exception
     end
   end
+
+  # The JS `weekOfYear` and `timeZoneName` date-time fields snake_case
+  # to names Localize spells `:week` and `:zone`. Accept both, so code
+  # ported from JS works with the spelling the JS API uses.
+  defp date_time_field(:week_of_year), do: :week
+  defp date_time_field("weekOfYear"), do: :week
+  defp date_time_field(:time_zone_name), do: :zone
+  defp date_time_field("timeZoneName"), do: :zone
+  defp date_time_field(code), do: code
 end

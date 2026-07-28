@@ -4,7 +4,9 @@ defmodule Intl.DurationFormat do
   [`Intl.DurationFormat`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DurationFormat).
 
   Formats durations as human-readable strings such as
-  "11 months and 30 days" or "2 hours, 30 minutes, and 45 seconds".
+  "11 months, 30 days" or "2 hours, 30 minutes, 45 seconds". Parts
+  are joined with the CLDR unit list pattern matching the format
+  width, per ECMA-402, not with an "and" conjunction.
 
   Delegates to `Localize.Duration` for the underlying formatting.
 
@@ -70,16 +72,16 @@ defmodule Intl.DurationFormat do
 
       iex> {:ok, d} = Localize.Duration.new(~D[2019-01-01], ~D[2019-12-31])
       iex> Intl.DurationFormat.format(d, locale: :en)
-      {:ok, "11 months and 30 days"}
+      {:ok, "11 months, 30 days"}
 
       iex> Intl.DurationFormat.format(%{hours: 2, minutes: 30}, locale: :en)
-      {:ok, "2 hours and 30 minutes"}
+      {:ok, "2 hours, 30 minutes"}
 
       iex> Intl.DurationFormat.format(%{hours: 2}, locale: :en, minutes_display: :always)
-      {:ok, "2 hours and 0 minutes"}
+      {:ok, "2 hours, 0 minutes"}
 
       iex> Intl.DurationFormat.format(%{hours: 2, minutes: 30}, locale: :en, hours: :narrow)
-      {:ok, "2h and 30 minutes"}
+      {:ok, "2h, 30 minutes"}
 
   """
   @spec format(Localize.Duration.t() | map(), Keyword.t()) ::
@@ -127,7 +129,7 @@ defmodule Intl.DurationFormat do
         %{type: :integer, value: "2", unit: :hour},
         %{type: :literal, value: " "},
         %{type: :unit, value: "hours"},
-        %{type: :literal, value: " and "},
+        %{type: :literal, value: ", "},
         %{type: :integer, value: "30", unit: :minute},
         %{type: :literal, value: " "},
         %{type: :unit, value: "minutes"}
@@ -195,7 +197,7 @@ defmodule Intl.DurationFormat do
   ### Examples
 
       iex> Intl.DurationFormat.format!(%{hours: 2, minutes: 30}, locale: :en)
-      "2 hours and 30 minutes"
+      "2 hours, 30 minutes"
 
   """
   @spec format!(Localize.Duration.t() | map(), Keyword.t()) :: String.t() | no_return()
@@ -209,7 +211,8 @@ defmodule Intl.DurationFormat do
   # The JS-compatible :style option maps to Localize's :format
   # option (Localize deprecated :format's old name :style in 0.43),
   # and the JS per-unit style/display options map to Localize's
-  # :styles and :display keyword lists.
+  # :formats and :display keyword lists (Localize renamed the
+  # per-unit width overrides from :styles to :formats in 1.0.0-rc.7).
   defp translate_options(options) do
     options
     |> translate_style()
@@ -224,19 +227,19 @@ defmodule Intl.DurationFormat do
   end
 
   defp translate_per_unit_options(options) do
-    {options, styles, display} =
+    {options, formats, display} =
       Enum.reduce(@per_unit_options, {options, [], []}, fn
-        {style_key, display_key, unit}, {options, styles, display} ->
+        {style_key, display_key, unit}, {options, formats, display} ->
           {style_value, options} = Keyword.pop(options, style_key)
           {display_value, options} = Keyword.pop(options, display_key)
 
-          styles = if style_value, do: [{unit, style_value} | styles], else: styles
+          formats = if style_value, do: [{unit, style_value} | formats], else: formats
           display = if display_value, do: [{unit, display_value} | display], else: display
-          {options, styles, display}
+          {options, formats, display}
       end)
 
     options
-    |> put_unless_empty(:styles, Enum.reverse(styles))
+    |> put_unless_empty(:formats, Enum.reverse(formats))
     |> put_unless_empty(:display, Enum.reverse(display))
   end
 

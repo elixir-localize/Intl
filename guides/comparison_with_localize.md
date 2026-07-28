@@ -176,11 +176,17 @@ JavaScript Intl provides a focused set of formatting and comparison APIs for use
 
 ## Capabilities Unique to JS Intl
 
-* **`formatToParts()`** — All JS Intl formatters can return structured arrays of `{type, value}` objects representing the individual parts of a formatted string. This is useful for custom rendering (for example, styling the currency symbol differently from the number). Localize does not expose format parts.
+* **`resolvedOptions()`** — JS formatters report the options actually in effect after locale negotiation and defaulting. `Intl` does not expose an equivalent; it is introspection-only, and the resolution it would report is Localize's. Tracked in [TODO.md](https://github.com/elixir-localize/intl/blob/main/TODO.md).
 
-* **`Intl.Segmenter` segment metadata** — The JS segmenter returns `isWordLike` for each word segment, distinguishing content words from punctuation and whitespace. The `unicode_string` library (used by `Intl.Segmenter` in this project) does not provide this metadata.
+* **`localeMatcher`** — JS lets you choose between the `"lookup"` and `"best fit"` locale negotiation algorithms. `Intl` deliberately does not offer this; Localize's own locale resolution applies.
 
-* **`Intl.PluralRules.selectRange()`** — Determines the plural category for a range of numbers (for example, "1–3 items"). Localize does not provide range plural selection.
+Three capabilities listed here in earlier releases are no longer JS-only:
+
+* **`formatToParts()`** — Localize exposes format parts across numbers, dates, times, datetimes, intervals, lists, units, durations, and relative times, and every JS `formatToParts` / `formatRangeToParts` surface has an `Intl` counterpart.
+
+* **`Intl.Segmenter` segment metadata** — `Intl.Segmenter.segment_with_metadata/2` returns the JS segment-object shape, with `:word_like?` standing in for `isWordLike`.
+
+* **`Intl.PluralRules.selectRange()`** — `Intl.PluralRules.select_range/3` selects the plural category for a numeric range, delegating to `Localize.Number.PluralRule.Range`.
 
 ## Capabilities Unique to Localize
 

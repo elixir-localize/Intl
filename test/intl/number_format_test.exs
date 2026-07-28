@@ -25,6 +25,26 @@ defmodule Intl.NumberFormatTest do
       assert {:error, _} = Intl.NumberFormat.format(42, locale: :en, style: :unit)
     end
 
+    test "unit accepts an atom as well as a string" do
+      assert {:ok, "5 km"} =
+               Intl.NumberFormat.format(5, locale: :en, style: :unit, unit: :kilometer)
+
+      assert {:ok, "5 km"} =
+               Intl.NumberFormat.format(5, locale: :en, style: :unit, unit: "kilometer")
+    end
+
+    test "a non-name unit returns an error rather than raising" do
+      for unit <- [42, %{}, ["meter"], {:meter}, 1.5] do
+        assert {:error, %ArgumentError{}} =
+                 Intl.NumberFormat.format(5, locale: :en, style: :unit, unit: unit)
+      end
+    end
+
+    test "an unparseable unit name returns an error" do
+      assert {:error, _} =
+               Intl.NumberFormat.format(5, locale: :en, style: :unit, unit: "not_a_unit")
+    end
+
     test "invalid style returns error" do
       assert {:error, %ArgumentError{}} = Intl.NumberFormat.format(42, locale: :en, style: :bogus)
     end
@@ -396,6 +416,21 @@ defmodule Intl.NumberFormatTest do
     test "unit style range returns error" do
       assert {:error, %ArgumentError{}} =
                Intl.NumberFormat.format_range(1, 2, locale: :en, style: :unit)
+    end
+
+    test "unit range accepts an atom unit and rejects a non-name" do
+      assert {:ok, _} =
+               Intl.NumberFormat.format_range(1, 5, locale: :en, style: :unit, unit: :kilometer)
+
+      assert {:error, %ArgumentError{}} =
+               Intl.NumberFormat.format_range(1, 5, locale: :en, style: :unit, unit: 42)
+
+      assert {:error, %ArgumentError{}} =
+               Intl.NumberFormat.format_range_to_parts(1, 5,
+                 locale: :en,
+                 style: :unit,
+                 unit: 42
+               )
     end
   end
 end

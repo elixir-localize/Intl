@@ -9,7 +9,7 @@ Add `intl` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:intl, "~> 0.1.0"}
+    {:intl, "~> 1.0-rc"}
   ]
 end
 ```
@@ -17,7 +17,7 @@ end
 Word and sentence segmentation require the optional `unicode_string` dependency:
 
 ```elixir
-{:unicode_string, "~> 1.8"}
+{:unicode_string, "~> 2.3"}
 ```
 
 ## Locale data

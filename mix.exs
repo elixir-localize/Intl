@@ -1,14 +1,14 @@
 defmodule Intl.MixProject do
   use Mix.Project
 
-  @version "1.0.0-rc.0"
+  @version "1.0.0-rc.1"
 
   def project do
     [
       app: :intl,
       version: @version,
       name: "Intl",
-      source_url: "https://github.com/elixir-cldr/intl",
+      source_url: "https://github.com/elixir-localize/intl",
       docs: docs(),
       deps: deps(),
       description: description(),
@@ -34,6 +34,7 @@ defmodule Intl.MixProject do
       links: links(),
       files: [
         "lib",
+        "guides",
         "mix.exs",
         ".formatter.exs",
         "README*",
@@ -98,7 +99,7 @@ defmodule Intl.MixProject do
 
   defp deps do
     [
-      {:localize, "~> 1.0-rc.3"},
+      {:localize, "~> 1.0-rc.7"},
       {:unicode_string, "~> 2.3", optional: true},
       {:ex_doc, "~> 0.34", only: [:dev, :release], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}

@@ -473,6 +473,13 @@ defmodule Intl.DateTimeFormat do
   # Skeletons must be atoms: Localize treats an atom :format as a
   # skeleton to match against the locale's formats, and a string
   # :format as a literal pattern.
+  #
+  # The `String.to_atom/1` below is bounded, not a route to atom-table
+  # exhaustion: each component contributes a symbol drawn from the
+  # compile-time `@skeleton_components` map (an unrecognised value
+  # yields "" via `Map.get/3`), and the hour symbol comes from
+  # `@hour_cycle_symbols`. Caller-supplied values select among those
+  # fixed strings; they never become atoms themselves.
   defp build_skeleton(options) do
     hour_symbol = hour_symbol(options)
 

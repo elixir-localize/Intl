@@ -42,11 +42,13 @@ jobs:
           - elixir: "1.19-otp-28"
             otp: "28"
 
-          # Elixir 1.20 — supports OTP 27–28
-          - elixir: "1.20.0-rc.4-otp-27"
+          # Elixir 1.20 — supports OTP 27–29
+          - elixir: "1.20-otp-27"
             otp: "27"
-          - elixir: "1.20.0-rc.4-otp-28"
+          - elixir: "1.20-otp-28"
             otp: "28"
+          - elixir: "1.20-otp-29"
+            otp: "29"
             lint: true
 
     steps:
@@ -78,6 +80,12 @@ jobs:
 
       - name: Compile (warnings as errors)
         run: mix compile --warnings-as-errors
+
+      # The README and guide examples format in these locales; only
+      # :en and :und ship with Localize. Without them the doc example
+      # tests skip rather than verify.
+      - name: Download locale data for documentation examples
+        run: mix localize.download_locales de fr ar
 
       - name: Run tests
         run: mix test

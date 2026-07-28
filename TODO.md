@@ -14,6 +14,10 @@ Nothing — every upstream-blocked conformance gap is closed.
 
 ## Completed
 
+### 1.0.0-rc.1 (July 28, 2026)
+
+`Intl.DisplayNames.of/2` accepts the JS `dateTimeField` names `:week_of_year` and `:time_zone_name`, which Localize spells `:week` and `:zone`; all twelve JS field names now resolve. `Intl.supported_values_of(:unit)` returns a flat list, matching the shape JS `supportedValuesOf` returns.
+
 ### 1.0.0-rc.0 fourth pass (July 23, 2026)
 
 Closed with `unicode_string` 2.3.0: `Intl.Segmenter.segment_with_metadata/2` provides the JS segment-object shape with `:word_like?` (`isWordLike`) via the new `Unicode.String.word_like?/1`.

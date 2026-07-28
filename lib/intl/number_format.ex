@@ -481,7 +481,7 @@ defmodule Intl.NumberFormat do
     {unit_display, options} = Keyword.pop(options, :unit_display, :short)
 
     if unit_name do
-      with {:ok, unit} <- Localize.Unit.new(number, unit_name) do
+      with {:ok, unit} <- new_unit(number, unit_name) do
         Localize.Unit.to_string(unit, Keyword.put(options, :format, unit_display))
       end
     else
@@ -494,7 +494,7 @@ defmodule Intl.NumberFormat do
     {unit_display, options} = Keyword.pop(options, :unit_display, :short)
 
     if unit_name do
-      with {:ok, unit} <- Localize.Unit.new(number, unit_name) do
+      with {:ok, unit} <- new_unit(number, unit_name) do
         Localize.Unit.to_parts(unit, Keyword.put(options, :format, unit_display))
       end
     else
@@ -507,8 +507,8 @@ defmodule Intl.NumberFormat do
     {unit_display, options} = Keyword.pop(options, :unit_display, :short)
 
     if unit_name do
-      with {:ok, unit_start} <- Localize.Unit.new(number_start, unit_name),
-           {:ok, unit_end} <- Localize.Unit.new(number_end, unit_name) do
+      with {:ok, unit_start} <- new_unit(number_start, unit_name),
+           {:ok, unit_end} <- new_unit(number_end, unit_name) do
         Localize.Unit.to_range_parts(
           unit_start,
           unit_end,
@@ -525,8 +525,8 @@ defmodule Intl.NumberFormat do
     {unit_display, options} = Keyword.pop(options, :unit_display, :short)
 
     if unit_name do
-      with {:ok, unit_start} <- Localize.Unit.new(number_start, unit_name),
-           {:ok, unit_end} <- Localize.Unit.new(number_end, unit_name) do
+      with {:ok, unit_start} <- new_unit(number_start, unit_name),
+           {:ok, unit_end} <- new_unit(number_end, unit_name) do
         Localize.Unit.to_range_string(
           unit_start,
           unit_end,
@@ -540,6 +540,27 @@ defmodule Intl.NumberFormat do
 
   defp missing_unit_error do
     ArgumentError.exception("The :unit option is required when style is :unit")
+  end
+
+  # `Localize.Unit.new/3` requires a binary unit name. JS unit names
+  # are strings, but atoms are idiomatic in Elixir and are accepted
+  # for locales, calendars, and currencies elsewhere in this library,
+  # so normalize them here. Any other term returns an error rather
+  # than raising `FunctionClauseError` out of the caller's process.
+  defp new_unit(number, unit_name) when is_binary(unit_name) do
+    Localize.Unit.new(number, unit_name)
+  end
+
+  defp new_unit(number, unit_name) when is_atom(unit_name) do
+    new_unit(number, Atom.to_string(unit_name))
+  end
+
+  defp new_unit(_number, unit_name) do
+    {:error,
+     ArgumentError.exception(
+       "Invalid :unit option #{inspect(unit_name)}. " <>
+         "Expected a CLDR unit name as a string or an atom"
+     )}
   end
 
   defp translate_options(style, options) do

@@ -4,9 +4,25 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0-rc.1] - 2026-07-28
+
+Requires Localize `~> 1.0-rc.7`.
+
+### Changed
+
+* `Intl.DurationFormat` joins duration parts with the CLDR unit list pattern matching the format width, per ECMA-402, instead of an "and" conjunction. `:en` now renders "2 hours, 30 minutes" (was "2 hours and 30 minutes") and "2h 30m" for `style: :narrow`.
+
+* `Intl.supported_values_of(:unit)` returns a flat sorted list of unit names instead of a map of units grouped by category, matching its `@spec` and the shape the other keys return.
+
+### Added
+
+* `Intl.DisplayNames.of/2` accepts the JS `dateTimeField` names `:week_of_year` and `:time_zone_name` (and the `"weekOfYear"` / `"timeZoneName"` strings) alongside Localize's `:week` and `:zone`.
 
 ### Fixed
+
+* `Intl.DurationFormat` per-unit style options (`hours: :narrow`) are applied again; Localize 1.0.0-rc.7 renamed the underlying per-unit width option from `:styles` to `:formats`, and the old key was silently ignored.
+
+* `Intl.NumberFormat` accepts an atom as the `:unit` option rather than raising `FunctionClauseError`, and returns an error tuple for a unit that is neither a string nor an atom.
 
 * `Intl.supported_values_of(:collation)` excludes `"standard"` and `"search"` from the returned collation values, per ECMA-402 `supportedValuesOf`.
 

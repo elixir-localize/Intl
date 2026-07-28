@@ -14,7 +14,7 @@ If you are familiar with the JS Intl API, you already know how to use this libra
 
 * `Intl.ListFormat` delegates to `Localize.List`.
 
-* `Intl.DisplayNames` delegates to `Localize.Territory`, `Localize.Language`, `Localize.Currency`, and `Localize.Script`.
+* `Intl.DisplayNames` delegates to `Localize.Territory`, `Localize.Language`, `Localize.Currency`, `Localize.Script`, and `Localize.Calendar`.
 
 * `Intl.RelativeTimeFormat` delegates to `Localize.DateTime.Relative`.
 
@@ -40,11 +40,11 @@ The full compatibility matrix is in [the Compatibility guide](https://hexdocs.pm
 
 * **Collator returns atoms.** `Intl.Collator.compare/3` returns `:lt`, `:eq`, or `:gt` instead of -1, 0, or 1.
 
-* **`formatToParts` is supported for numbers** via `Intl.NumberFormat.format_to_parts/2`; the other modules do not yet expose structured parts.
+* **`formatToParts` is supported everywhere JS has it** — `Intl.NumberFormat`, `Intl.DateTimeFormat`, `Intl.ListFormat`, `Intl.RelativeTimeFormat`, and `Intl.DurationFormat` — as is `formatRangeToParts` for numbers and dates/times.
 
 * **`supportedLocalesOf` is one top-level function**, `Intl.supported_locales_of/1`, since all modules share the same CLDR locale data. `resolvedOptions` is not implemented.
 
-* **Segmenter output is simplified.** Returns a flat list of strings rather than the JS iterable of rich segment objects.
+* **Segmenter has two shapes.** `Intl.Segmenter.segment/2` returns a flat list of strings; `segment_with_metadata/2` mirrors the JS segment objects, with `:segment`, `:index`, and `:word_like?` (the JS `isWordLike`).
 
 ## Examples
 
@@ -174,7 +174,7 @@ iex> Intl.Collator.sort(["banana", "apple", "cherry"], locale: :en)
 
 ```elixir
 iex> Intl.DurationFormat.format(%{hours: 2, minutes: 30}, locale: :en)
-{:ok, "2 hours and 30 minutes"}
+{:ok, "2 hours, 30 minutes"}
 ```
 
 ### Text Segmentation
@@ -216,7 +216,7 @@ end
 Word and sentence segmentation require the optional `unicode_string` dependency:
 
 ```elixir
-{:unicode_string, "~> 1.8"}
+{:unicode_string, "~> 2.3"}
 ```
 
 ## Locale Data

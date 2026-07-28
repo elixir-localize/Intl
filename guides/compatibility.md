@@ -16,7 +16,7 @@ Return values use Elixir's `{:ok, result}` / `{:error, reason}` convention. Bang
 |---|---|---|
 | `Intl.getCanonicalLocales()` | `Intl.get_canonical_locales/1` | Compatible |
 | `supportedLocalesOf()` (per constructor) | `Intl.supported_locales_of/1` | One top-level function — all modules share the same CLDR locale data |
-| `Intl.supportedValuesOf()` | `Intl.supported_values_of/1` | Compatible — supports `:calendar`, `:collation`, `:currency`, `:numbering_system`, `:time_zone`, and `:unit`. |
+| `Intl.supportedValuesOf()` | `Intl.supported_values_of/1` | Compatible — supports `:calendar`, `:collation`, `:currency`, `:numbering_system`, `:time_zone`, and `:unit`. Values are atoms or strings as Localize returns them, and `:unit` lists CLDR's simple unit names rather than ECMA-402's sanctioned identifiers. |
 
 ## Intl.NumberFormat
 
@@ -118,7 +118,7 @@ The combination of `type` and `style` is mapped to a Localize list format atom (
 
 | JS Method | Elixir Function | Status |
 |---|---|---|
-| `of()` | `Intl.DisplayNames.of/2` | Partial |
+| `of()` | `Intl.DisplayNames.of/2` | Compatible |
 | `resolvedOptions()` | — | Not supported |
 | `supportedLocalesOf()` | — | Use `Intl.supported_locales_of/1` |
 
@@ -132,6 +132,8 @@ The combination of `type` and `style` is mapped to a Localize list format atom (
 | `"script"` | `:script` | Compatible — delegates to `Localize.Script.display_name/2` |
 | `"calendar"` | `:calendar` | Compatible — delegates to `Localize.Calendar.display_name/3` |
 | `"dateTimeField"` | `:date_time_field` | Compatible — delegates to `Localize.Calendar.display_name/3` |
+
+Field names for `:date_time_field` are the JS names in snake_case: `:era`, `:year`, `:quarter`, `:month`, `:week_of_year`, `:weekday`, `:day`, `:day_period`, `:hour`, `:minute`, `:second`, and `:time_zone_name`. Localize's own spellings `:week` and `:zone` are accepted too, as are the JS strings `"weekOfYear"` and `"timeZoneName"`.
 
 ## Intl.RelativeTimeFormat
 
@@ -206,6 +208,8 @@ An additional `sort/2` convenience function is provided that is not present in t
 
 The JS API accepts a plain object with `years`, `months`, `days`, `hours`, `minutes`, `seconds` properties. This library accepts both a `Localize.Duration` struct and a plain map with those keys (plural or singular forms).
 
+Duration parts are joined with the CLDR unit list pattern matching the format width, as ECMA-402 specifies — `:en` renders "2 hours, 30 minutes" and "2h 30m" for `style: :narrow`, not an "and" conjunction.
+
 ### DurationFormat Option Mapping
 
 | JS Option | Elixir Option | Notes |
@@ -218,7 +222,7 @@ The JS API accepts a plain object with `years`, `months`, `days`, `hours`, `minu
 
 | JS Method | Elixir Function | Status |
 |---|---|---|
-| `segment()` | `Intl.Segmenter.segment/2` | Partial |
+| `segment()` | `Intl.Segmenter.segment/2`, `segment_with_metadata/2` | Compatible |
 | `resolvedOptions()` | — | Not supported |
 | `supportedLocalesOf()` | — | Use `Intl.supported_locales_of/1` |
 
