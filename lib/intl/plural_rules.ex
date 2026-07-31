@@ -11,6 +11,12 @@ defmodule Intl.PluralRules do
 
   """
 
+  @typedoc """
+  A CLDR plural category.
+
+  """
+  @type plural_category :: :zero | :one | :two | :few | :many | :other
+
   @doc """
   Returns the plural category for a given number.
 
@@ -48,7 +54,7 @@ defmodule Intl.PluralRules do
 
   """
   @spec select(number() | Decimal.t(), Keyword.t()) ::
-          {:ok, atom()} | {:error, term()}
+          {:ok, plural_category()} | {:error, Exception.t()}
   def select(number, options \\ []) do
     case Localize.Number.PluralRule.plural_type(number, options) do
       {:error, _} = error -> error
@@ -78,7 +84,7 @@ defmodule Intl.PluralRules do
       :one
 
   """
-  @spec select!(number() | Decimal.t(), Keyword.t()) :: atom() | no_return()
+  @spec select!(number() | Decimal.t(), Keyword.t()) :: plural_category() | no_return()
   def select!(number, options \\ []) do
     case select(number, options) do
       {:ok, category} -> category
@@ -126,7 +132,7 @@ defmodule Intl.PluralRules do
 
   """
   @spec select_range(number() | Decimal.t(), number() | Decimal.t(), Keyword.t()) ::
-          {:ok, atom()} | {:error, term()}
+          {:ok, plural_category()} | {:error, Exception.t()}
   def select_range(start_number, end_number, options \\ []) do
     locale = Keyword.get(options, :locale, Localize.get_locale())
     Localize.Number.PluralRule.Range.plural_rule_for(start_number, end_number, locale)
@@ -157,7 +163,7 @@ defmodule Intl.PluralRules do
 
   """
   @spec select_range!(number() | Decimal.t(), number() | Decimal.t(), Keyword.t()) ::
-          atom() | no_return()
+          plural_category() | no_return()
   def select_range!(start_number, end_number, options \\ []) do
     case select_range(start_number, end_number, options) do
       {:ok, category} -> category

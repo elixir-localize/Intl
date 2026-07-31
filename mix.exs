@@ -1,7 +1,7 @@
 defmodule Intl.MixProject do
   use Mix.Project
 
-  @version "1.0.0-rc.1"
+  @version "1.0.0"
 
   def project do
     [
@@ -16,7 +16,14 @@ defmodule Intl.MixProject do
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       dialyzer: [
-        plt_add_apps: ~w(mix)a
+        plt_add_apps: ~w(mix)a,
+        flags: [
+          :error_handling,
+          :unknown,
+          :underspecs,
+          :extra_return,
+          :missing_return
+        ]
       ]
     ]
   end
@@ -99,9 +106,10 @@ defmodule Intl.MixProject do
 
   defp deps do
     [
-      {:localize, "~> 1.0-rc.7"},
+      {:localize, "~> 1.0"},
       {:unicode_string, "~> 2.3", optional: true},
       {:ex_doc, "~> 0.34", only: [:dev, :release], runtime: false},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ] ++ maybe_json_polyfill()
   end

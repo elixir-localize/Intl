@@ -145,9 +145,9 @@ defmodule Intl.DateTimeFormat do
     localize_options = translate_options(options)
 
     cond do
-      is_datetime?(value) -> Localize.DateTime.to_string(value, localize_options)
-      is_date?(value) -> Localize.Date.to_string(value, localize_options)
-      is_time?(value) -> Localize.Time.to_string(value, localize_options)
+      datetime?(value) -> Localize.DateTime.to_string(value, localize_options)
+      date?(value) -> Localize.Date.to_string(value, localize_options)
+      time?(value) -> Localize.Time.to_string(value, localize_options)
       true -> {:error, ArgumentError.exception("Unsupported value type: #{inspect(value)}")}
     end
   end
@@ -228,9 +228,9 @@ defmodule Intl.DateTimeFormat do
     localize_options = translate_options(options)
 
     cond do
-      is_datetime?(value) -> Localize.DateTime.to_parts(value, localize_options)
-      is_date?(value) -> Localize.Date.to_parts(value, localize_options)
-      is_time?(value) -> Localize.Time.to_parts(value, localize_options)
+      datetime?(value) -> Localize.DateTime.to_parts(value, localize_options)
+      date?(value) -> Localize.Date.to_parts(value, localize_options)
+      time?(value) -> Localize.Time.to_parts(value, localize_options)
       true -> {:error, ArgumentError.exception("Unsupported value type: #{inspect(value)}")}
     end
   end
@@ -484,7 +484,7 @@ defmodule Intl.DateTimeFormat do
     hour_symbol = hour_symbol(options)
 
     @skeleton_order
-    |> Enum.map(fn component ->
+    |> Enum.map_join(fn component ->
       case Keyword.fetch(options, component) do
         {:ok, value} ->
           components = Map.fetch!(@skeleton_components, component)
@@ -494,7 +494,6 @@ defmodule Intl.DateTimeFormat do
           ""
       end
     end)
-    |> Enum.join()
     |> String.to_atom()
   end
 
@@ -525,18 +524,18 @@ defmodule Intl.DateTimeFormat do
     Enum.any?(@skeleton_order, &Keyword.has_key?(options, &1))
   end
 
-  defp is_datetime?(%DateTime{}), do: true
-  defp is_datetime?(%NaiveDateTime{}), do: true
-  defp is_datetime?(%{year: _, month: _, day: _, hour: _, minute: _}), do: true
-  defp is_datetime?(_), do: false
+  defp datetime?(%DateTime{}), do: true
+  defp datetime?(%NaiveDateTime{}), do: true
+  defp datetime?(%{year: _, month: _, day: _, hour: _, minute: _}), do: true
+  defp datetime?(_), do: false
 
-  defp is_date?(%Date{}), do: true
-  defp is_date?(%{year: _}), do: true
-  defp is_date?(%{month: _}), do: true
-  defp is_date?(%{day: _}), do: true
-  defp is_date?(_), do: false
+  defp date?(%Date{}), do: true
+  defp date?(%{year: _}), do: true
+  defp date?(%{month: _}), do: true
+  defp date?(%{day: _}), do: true
+  defp date?(_), do: false
 
-  defp is_time?(%Time{}), do: true
-  defp is_time?(%{hour: _}), do: true
-  defp is_time?(_), do: false
+  defp time?(%Time{}), do: true
+  defp time?(%{hour: _}), do: true
+  defp time?(_), do: false
 end
