@@ -54,8 +54,8 @@ defmodule Intl.MixProject do
   def links do
     %{
       "GitHub" => "https://github.com/elixir-localize/intl",
-      "Readme" => "https://hexdocs.pm/intl/readme.html",
-      "Changelog" => "https://hexdocs.pm/intl/changelog.html"
+      "Readme" => "https://github.com/elixir-localize/intl/blob/v#{@version}/README.md",
+      "Changelog" => "https://github.com/elixir-localize/intl/blob/v#{@version}/CHANGELOG.md"
     }
   end
 
