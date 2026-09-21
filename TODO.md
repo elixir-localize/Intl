@@ -1,39 +1,19 @@
 # TODO
 
-Remaining conformance gaps against the JS Intl API, tracked in the [compatibility guide](https://hexdocs.pm/intl/compatibility.html). Split by whether the work is blocked on Localize.
+Remaining conformance gaps against the JS Intl API, tracked in the
+[compatibility guide](https://hexdocs.pm/intl/compatibility.html). Every
+upstream-blocked gap is closed; what remains is Intl-side only.
 
-## Blocked upstream
+## Deferred
 
-Nothing — every upstream-blocked conformance gap is closed.
+* [ ] **`resolvedOptions`** — could be built on `Localize.Number.Format.Options.validate_options/2` for NumberFormat; the other modules need equivalent option resolution first. Deferred as an introspection-only API.
+* [ ] **`localeMatcher`** — deliberately not supported; Localize's own locale resolution applies.
 
-## Intl-side (no upstream work required)
+## Done
 
-* `resolvedOptions` — could be built on `Localize.Number.Format.Options.validate_options/2` for NumberFormat; other modules need equivalent resolution. Deferred as introspection-only API.
-
-* `localeMatcher` — deliberately not supported; Localize's own locale resolution applies.
-
-## Completed
-
-### 1.0.0-rc.1 (July 28, 2026)
-
-`Intl.DisplayNames.of/2` accepts the JS `dateTimeField` names `:week_of_year` and `:time_zone_name`, which Localize spells `:week` and `:zone`; all twelve JS field names now resolve. `Intl.supported_values_of(:unit)` returns a flat list, matching the shape JS `supportedValuesOf` returns.
-
-### 1.0.0-rc.0 fourth pass (July 23, 2026)
-
-Closed with `unicode_string` 2.3.0: `Intl.Segmenter.segment_with_metadata/2` provides the JS segment-object shape with `:word_like?` (`isWordLike`) via the new `Unicode.String.word_like?/1`.
-
-### 1.0.0-rc.0 third pass (July 23, 2026)
-
-Closed with post-rc.2 Localize work: `DateTimeFormat.format_range_to_parts/3` (interval parts), `NumberFormat.format_range_to_parts/3` for `style: :unit`, `DurationFormat.format_to_parts/2`, and the `:numbering_system` option for date/time formatting. Every JS `formatToParts`/`formatRangeToParts` surface is now implemented.
-
-### 1.0.0-rc.0 second pass (July 23, 2026)
-
-Closed with Localize 1.0.0-rc.2: `format_to_parts` for DateTimeFormat, ListFormat, and RelativeTimeFormat; NumberFormat `format_range_to_parts/3`, unit parts, unit ranges, and `currency_display: :name` parts; DateTimeFormat `fractional_second_digits`; DurationFormat per-unit style and display options; `PluralRules.select_range/3` now delegates to `Localize.Number.PluralRule.Range`.
-
-### 1.0.0-rc.0 first pass (July 23, 2026)
-
-Closed with Localize 1.0.0-rc.1: `minimum_integer_digits`, `trailing_zero_display`, `rounding_priority`, `format_to_parts/2` for numbers, `RelativeTimeFormat numeric: :always`, `supported_values_of` `:collation`/`:time_zone`, `supported_locales_of/1`, `PluralRules.select_range/3`, `Collator :usage`/`:collation`, and the DateTimeFormat `:era`/`:day_period`/`:time_zone_name`/`:hour12`/`:hour_cycle` components (plus the component-skeleton bug fix).
-
-### Script Display Names
-
-Resolved: `Localize.Script.display_name/2` is now available and `Intl.DisplayNames` supports `type: :script`.
+* [x] **`dateTimeField` names and flat `supportedValuesOf(:unit)`** — `Intl.DisplayNames.of/2` accepts the JS `:week_of_year` and `:time_zone_name`, which Localize spells `:week` and `:zone`, so all twelve JS field names resolve; `Intl.supported_values_of(:unit)` returns a flat list. 2026-07-28, v1.0.0-rc.1.
+* [x] **Segmenter metadata** — `Intl.Segmenter.segment_with_metadata/2` provides the JS segment-object shape with `:word_like?` (`isWordLike`) via `Unicode.String.word_like?/1`. 2026-07-23, with `unicode_string` 2.3.0.
+* [x] **Remaining `formatToParts` and `formatRangeToParts` surfaces** — `DateTimeFormat.format_range_to_parts/3`, `NumberFormat.format_range_to_parts/3` for `style: :unit`, `DurationFormat.format_to_parts/2`, and `:numbering_system` for date and time formatting. 2026-07-23, with Localize post-1.0.0-rc.2.
+* [x] **Parts APIs and duration options** — `format_to_parts` for DateTimeFormat, ListFormat and RelativeTimeFormat; NumberFormat `format_range_to_parts/3`, unit parts, unit ranges and `currency_display: :name` parts; DateTimeFormat `fractional_second_digits`; DurationFormat per-unit style and display; `PluralRules.select_range/3` delegating to `Localize.Number.PluralRule.Range`. 2026-07-23, with Localize 1.0.0-rc.2.
+* [x] **First conformance pass** — `minimum_integer_digits`, `trailing_zero_display`, `rounding_priority`, `format_to_parts/2` for numbers, `RelativeTimeFormat numeric: :always`, `supported_values_of` for `:collation` and `:time_zone`, `supported_locales_of/1`, `PluralRules.select_range/3`, Collator `:usage` and `:collation`, and the DateTimeFormat `:era`, `:day_period`, `:time_zone_name`, `:hour12` and `:hour_cycle` components. 2026-07-23, with Localize 1.0.0-rc.1.
+* [x] **Script display names** — `Localize.Script.display_name/2` landed and `Intl.DisplayNames` supports `type: :script`.

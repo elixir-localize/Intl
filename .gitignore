@@ -22,3 +22,6 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 intl-*.tar
 
+
+# Session context written by Claude; personal, never committed.
+CLAUDE.local.md
