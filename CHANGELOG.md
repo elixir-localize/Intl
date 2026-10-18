@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+* Requires `localize ~> 1.4`.
+
+* `Intl.Collator.compare/3` and `sort/2` return `{:error, exception}` for a string that is not valid UTF-8 or an option value outside its documented set, as Localize 1.4 does, and their specs say so.
+
 ## [1.0.1] - 2026-09-21
 
 ### Fixed

@@ -66,6 +66,9 @@ defmodule Intl.Collator do
 
   * `:gt` if `string1` sorts after `string2`.
 
+  * `{:error, exception}`, a `Localize.InvalidValueError`, if a string is
+    not valid UTF-8 or an option has a value outside its documented set.
+
   ### Examples
 
       iex> Intl.Collator.compare("a", "b", locale: :en)
@@ -78,7 +81,8 @@ defmodule Intl.Collator do
       :eq
 
   """
-  @spec compare(String.t(), String.t(), Keyword.t()) :: :lt | :eq | :gt
+  @spec compare(String.t(), String.t(), Keyword.t()) ::
+          :lt | :eq | :gt | {:error, Exception.t()}
   def compare(string1, string2, options \\ []) do
     localize_options = translate_options(options)
     Localize.Collation.compare(string1, string2, localize_options)
@@ -99,15 +103,22 @@ defmodule Intl.Collator do
 
   ### Returns
 
-  * A sorted list of strings.
+  * A sorted list of strings, or
+
+  * `{:error, exception}`, a `Localize.InvalidValueError`, if the list
+    holds anything but valid UTF-8 strings or an option has a value
+    outside its documented set.
 
   ### Examples
 
       iex> Intl.Collator.sort(["banana", "apple", "cherry"], locale: :en)
       ["apple", "banana", "cherry"]
 
+      iex> Intl.Collator.sort(["apple", 1], locale: :en) |> elem(0)
+      :error
+
   """
-  @spec sort([String.t()], Keyword.t()) :: [String.t()]
+  @spec sort([String.t()], Keyword.t()) :: [String.t()] | {:error, Exception.t()}
   def sort(list, options \\ []) do
     localize_options = translate_options(options)
     Localize.Collation.sort(list, localize_options)

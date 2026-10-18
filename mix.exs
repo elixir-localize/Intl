@@ -106,7 +106,10 @@ defmodule Intl.MixProject do
 
   defp deps do
     [
-      {:localize, "~> 1.0"},
+      # Localize 1.4.0 is not yet on hex. Return to `{:localize, "~> 1.4"}`
+      # before publishing: hex refuses a package with a git dependency.
+      # `:override` because `unicode_string` asks for localize from hex.
+      {:localize, github: "elixir-localize/localize", branch: "main", override: true},
       {:unicode_string, "~> 2.3", optional: true},
       {:ex_doc, "~> 0.34", only: [:dev, :release], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
