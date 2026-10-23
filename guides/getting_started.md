@@ -9,7 +9,7 @@ Add `intl` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:intl, "~> 1.0-rc"}
+    {:intl, "~> 1.0"}
   ]
 end
 ```
